@@ -1,8 +1,8 @@
 "use client";
 
+import { Loader2 } from "lucide-react";
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -11,6 +11,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 
 export function ConfirmDialog({
   trigger,
@@ -19,6 +20,7 @@ export function ConfirmDialog({
   confirmLabel = "Confirm",
   cancelLabel = "Cancel",
   destructive = false,
+  pending = false,
   open,
   onOpenChange,
   onConfirm,
@@ -29,12 +31,20 @@ export function ConfirmDialog({
   confirmLabel?: string;
   cancelLabel?: string;
   destructive?: boolean;
+  pending?: boolean;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   onConfirm: () => void | Promise<void>;
 }) {
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
+    <AlertDialog
+      open={open}
+      onOpenChange={(o) => {
+        // Block closes while pending so user can't cancel mid-action.
+        if (pending && !o) return;
+        onOpenChange?.(o);
+      }}
+    >
       {trigger ? <AlertDialogTrigger render={trigger} /> : null}
       <AlertDialogContent>
         <AlertDialogHeader>
@@ -44,19 +54,26 @@ export function ConfirmDialog({
           ) : null}
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>{cancelLabel}</AlertDialogCancel>
-          <AlertDialogAction
+          <AlertDialogCancel disabled={pending}>{cancelLabel}</AlertDialogCancel>
+          <Button
+            type="button"
+            variant={destructive ? "destructive" : "default"}
+            disabled={pending}
+            aria-busy={pending}
             onClick={() => {
+              if (pending) return;
               void onConfirm();
             }}
-            className={
-              destructive
-                ? "bg-destructive text-white hover:bg-destructive/90"
-                : ""
-            }
           >
-            {confirmLabel}
-          </AlertDialogAction>
+            {pending ? (
+              <>
+                <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                Working...
+              </>
+            ) : (
+              confirmLabel
+            )}
+          </Button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

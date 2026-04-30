@@ -72,6 +72,7 @@ export function AccountActions({
       ) : null}
       <ConfirmDialog
         open={open}
+        pending={pending}
         onOpenChange={(o) => {
           setOpen(o);
           if (!o) setConfirmInput("");

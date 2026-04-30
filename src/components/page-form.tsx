@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 
 const PageEditor = dynamic(
   () => import("@/components/page-editor").then((m) => m.PageEditor),
@@ -70,6 +71,7 @@ export function PageForm({
   const [tags, setTags] = useState<string[]>(initial.tagSlugs);
   const [tagInput, setTagInput] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   function addTag(raw: string) {
     const slug = raw
@@ -201,7 +203,11 @@ export function PageForm({
 
   function onDelete() {
     if (!initial.id) return;
-    if (!window.confirm("Delete this page? This cannot be undone.")) return;
+    setDeleteOpen(true);
+  }
+
+  function runDelete() {
+    if (!initial.id) return;
     const fd = new FormData();
     fd.set("id", initial.id);
     startDeleteTransition(async () => {
@@ -411,6 +417,27 @@ export function PageForm({
           </CardContent>
         </Card>
       </div>
+
+      <ConfirmDialog
+        open={deleteOpen}
+        pending={deletePending}
+        onOpenChange={setDeleteOpen}
+        title="Delete page?"
+        description={
+          <>
+            <span className="block">
+              Permanently removes the page and all submissions referencing it.
+              Cannot be undone.
+            </span>
+            <span className="mt-2 block font-mono text-xs text-muted-foreground">
+              {initial.slug}
+            </span>
+          </>
+        }
+        confirmLabel="Delete forever"
+        destructive
+        onConfirm={runDelete}
+      />
     </div>
   );
 }

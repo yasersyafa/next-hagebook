@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,6 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { setPageStatus, deletePage, duplicatePage } from "@/actions/page";
 
 export function PageRowActions({
@@ -25,6 +26,7 @@ export function PageRowActions({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   function toggleStatus() {
     const next = status === "PUBLISHED" ? "DRAFT" : "PUBLISHED";
@@ -42,8 +44,7 @@ export function PageRowActions({
     });
   }
 
-  function onDelete() {
-    if (!window.confirm(`Delete page "${slug}"? This cannot be undone.`)) return;
+  function runDelete() {
     const fd = new FormData();
     fd.set("id", id);
     startTransition(async () => {
@@ -53,6 +54,7 @@ export function PageRowActions({
         return;
       }
       toast.success("Deleted");
+      setDeleteOpen(false);
       router.refresh();
     });
   }
@@ -77,37 +79,60 @@ export function PageRowActions({
   }
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        render={
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            aria-label="Actions"
-            disabled={pending}
-          />
-        }
-      >
-        ⋮
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem render={<Link href={`/admin/pages/${id}/edit`} />}>
-          Edit
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={toggleStatus}>
-          {status === "PUBLISHED" ? "Unpublish" : "Publish"}
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={onDuplicate}>
-          Duplicate
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          onClick={onDelete}
-          className="text-destructive focus:text-destructive"
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Actions"
+              disabled={pending}
+            />
+          }
         >
-          Delete
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+          ⋮
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem render={<Link href={`/admin/pages/${id}/edit`} />}>
+            Edit
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={toggleStatus}>
+            {status === "PUBLISHED" ? "Unpublish" : "Publish"}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={onDuplicate}>
+            Duplicate
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onClick={() => setDeleteOpen(true)}
+            className="text-destructive focus:text-destructive"
+          >
+            Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <ConfirmDialog
+        open={deleteOpen}
+        pending={pending}
+        onOpenChange={setDeleteOpen}
+        title="Delete page?"
+        description={
+          <>
+            <span className="block">
+              Permanently removes the page and all submissions referencing it.
+              Cannot be undone.
+            </span>
+            <span className="mt-2 block font-mono text-xs text-muted-foreground">
+              {slug}
+            </span>
+          </>
+        }
+        confirmLabel="Delete forever"
+        destructive
+        onConfirm={runDelete}
+      />
+    </>
   );
 }

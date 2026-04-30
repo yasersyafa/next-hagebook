@@ -43,10 +43,11 @@ export function SignOutButton({
       </Button>
       <ConfirmDialog
         open={open}
+        pending={pending}
         onOpenChange={setOpen}
         title="Sign out?"
         description="You'll need to sign in again to access your dashboard."
-        confirmLabel={pending ? "Signing out..." : "Sign out"}
+        confirmLabel="Sign out"
         onConfirm={() => {
           startTransition(async () => {
             await logoutAction();

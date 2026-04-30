@@ -210,6 +210,7 @@ export function UserDecisionButtons({
 
       <ConfirmDialog
         open={editOpen}
+        pending={pending}
         onOpenChange={(o) => {
           setEditOpen(o);
           if (!o) {
@@ -245,6 +246,7 @@ export function UserDecisionButtons({
 
       <ConfirmDialog
         open={promoteOpen}
+        pending={pending}
         onOpenChange={setPromoteOpen}
         title={role === "STUDENT" ? "Promote to admin?" : "Demote to student?"}
         description={
@@ -263,6 +265,7 @@ export function UserDecisionButtons({
       {confirmAction ? (
         <ConfirmDialog
           open={confirmAction !== null}
+          pending={pending}
           onOpenChange={(o) => {
             if (!o) setConfirmAction(null);
           }}
@@ -287,6 +290,7 @@ export function UserDecisionButtons({
 
       <ConfirmDialog
         open={deleteOpen}
+        pending={pending}
         onOpenChange={(o) => {
           setDeleteOpen(o);
           if (!o) setDeleteEmailInput("");
