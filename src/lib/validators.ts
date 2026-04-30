@@ -36,6 +36,17 @@ export const deleteUserSchema = z.object({
   confirmEmail: z.string().email(),
 });
 
+export const updateUserSchema = z.object({
+  userId: z.string().min(1),
+  email: z.string().email(),
+  name: z.string().max(80).optional().nullable(),
+});
+
+export const setUserRoleSchema = z.object({
+  userId: z.string().min(1),
+  role: z.enum(["STUDENT", "ADMIN"]),
+});
+
 const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 export const tagSlugRegex = slugRegex;

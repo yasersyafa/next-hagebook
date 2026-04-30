@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { put } from "@vercel/blob";
+import { fileTypeFromBuffer } from "file-type";
 import { auth } from "@/lib/auth";
 
 const MAX_BYTES = 5 * 1024 * 1024; // 5MB
@@ -37,15 +38,33 @@ export async function POST(request: Request) {
   const ext = contentType.split("/")[1]?.replace("jpeg", "jpg") ?? "bin";
   const key = `lessons/${Date.now()}-${safeFilename}${safeFilename.endsWith(`.${ext}`) ? "" : `.${ext}`}`;
 
-  const body = request.body;
-  if (!body) {
+  const arrayBuffer = await request.arrayBuffer();
+  if (!arrayBuffer.byteLength) {
     return NextResponse.json({ error: "Empty body" }, { status: 400 });
+  }
+  if (arrayBuffer.byteLength > MAX_BYTES) {
+    return NextResponse.json({ error: "Image too large (max 5MB)" }, { status: 413 });
+  }
+
+  const buf = Buffer.from(arrayBuffer);
+  const detected = await fileTypeFromBuffer(buf);
+  if (!detected || !ALLOWED_TYPES.includes(detected.mime)) {
+    return NextResponse.json(
+      { error: "File content does not match an allowed image type" },
+      { status: 400 },
+    );
+  }
+  if (detected.mime !== contentType) {
+    return NextResponse.json(
+      { error: "Content-Type header does not match file content" },
+      { status: 400 },
+    );
   }
 
   try {
-    const blob = await put(key, body, {
+    const blob = await put(key, buf, {
       access: "public",
-      contentType,
+      contentType: detected.mime,
       token,
     });
     return NextResponse.json({ url: blob.url, pathname: blob.pathname });

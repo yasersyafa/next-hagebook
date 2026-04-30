@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import dynamic from "next/dynamic";
@@ -167,6 +167,19 @@ export function PageForm({
       }
     });
   }
+
+  // Cmd/Ctrl+S → save current state (preserves status, never auto-publishes)
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === "s") {
+        e.preventDefault();
+        submit(status);
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slug, title, description, order, contentHtml, assignmentPrompt, status, categoryId, tags]);
 
   function toggleStatus() {
     if (!initial.id) return;

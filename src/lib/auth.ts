@@ -55,7 +55,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   ],
   callbacks: {
     async jwt({ token, user, trigger }) {
-      const t = token as typeof token & { id?: string; role?: Role; status?: UserStatus };
+      const t = token as typeof token & {
+        id?: string;
+        role?: Role;
+        status?: UserStatus;
+        iat?: number;
+      };
       if (user) {
         t.id = (user as { id: string }).id;
         t.role = user.role;
@@ -68,6 +73,21 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         if (fresh) {
           t.role = fresh.role;
           t.status = fresh.status;
+        }
+      }
+
+      // Reject stale tokens issued before last password change.
+      if (t.id && t.iat) {
+        const u = await prisma.user.findUnique({
+          where: { id: t.id },
+          select: { passwordChangedAt: true },
+        });
+        if (u?.passwordChangedAt) {
+          const changedSec = Math.floor(u.passwordChangedAt.getTime() / 1000);
+          if (t.iat < changedSec) {
+            // Returning a token w/o id makes session invalid.
+            return {};
+          }
         }
       }
       return t;

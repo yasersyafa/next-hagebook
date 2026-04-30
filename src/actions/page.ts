@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { sanitizeHtml } from "@/lib/sanitize";
+import { audit } from "@/lib/audit";
 import {
   pageCreateSchema,
   pageUpdateSchema,
@@ -102,6 +103,15 @@ export async function createPage(
     select: { id: true, slug: true },
   });
 
+  await audit({
+    actorId: admin.id,
+    actorEmail: admin.email,
+    action: data.status === "PUBLISHED" ? "page.create-published" : "page.create-draft",
+    targetType: "page",
+    targetId: created.id,
+    metadata: { slug: data.slug },
+  });
+
   revalidatePath("/admin/pages");
   revalidatePath("/");
   revalidatePath("/dashboard");
@@ -155,6 +165,15 @@ export async function updatePage(formData: FormData): Promise<ActionResult> {
     },
   });
 
+  await audit({
+    actorId: admin.id,
+    actorEmail: admin.email,
+    action: becomingPublished ? "page.publish" : "page.update",
+    targetType: "page",
+    targetId: data.id,
+    metadata: { slug: data.slug },
+  });
+
   revalidatePath("/admin/pages");
   revalidatePath("/");
   revalidatePath("/dashboard");
@@ -187,6 +206,15 @@ export async function setPageStatus(formData: FormData): Promise<ActionResult> {
     },
   });
 
+  await audit({
+    actorId: admin.id,
+    actorEmail: admin.email,
+    action: parsed.data.status === "PUBLISHED" ? "page.publish" : "page.unpublish",
+    targetType: "page",
+    targetId: parsed.data.id,
+    metadata: { slug: existing.slug },
+  });
+
   revalidatePath("/admin/pages");
   revalidatePath("/");
   revalidatePath("/dashboard");
@@ -205,6 +233,15 @@ export async function deletePage(formData: FormData): Promise<ActionResult> {
   if (!existing) return { ok: false, error: "Page not found" };
 
   await prisma.page.delete({ where: { id: parsed.data.id } });
+
+  await audit({
+    actorId: admin.id,
+    actorEmail: admin.email,
+    action: "page.delete",
+    targetType: "page",
+    targetId: parsed.data.id,
+    metadata: { slug: existing.slug },
+  });
 
   revalidatePath("/admin/pages");
   revalidatePath("/");

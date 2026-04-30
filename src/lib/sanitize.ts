@@ -31,7 +31,7 @@ export function sanitizeHtml(dirty: string): string {
     },
     allowedSchemes: ["http", "https", "mailto"],
     allowedSchemesByTag: {
-      img: ["http", "https", "data"],
+      img: ["http", "https"],
     },
     allowedSchemesAppliedToAttributes: ["href", "src"],
     allowProtocolRelative: false,

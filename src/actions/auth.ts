@@ -2,16 +2,38 @@
 
 import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { AuthError } from "next-auth";
 import { prisma } from "@/lib/db";
 import { signIn, signOut } from "@/lib/auth";
 import { registerSchema, loginSchema } from "@/lib/validators";
+import { checkRateLimit } from "@/lib/rate-limit";
+
+async function clientIp(): Promise<string> {
+  const h = await headers();
+  return (
+    h.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    h.get("x-real-ip") ??
+    "unknown"
+  );
+}
 
 export type ActionResult<T = unknown> =
   | { ok: true; data?: T }
   | { ok: false; error: string };
 
 export async function registerUser(formData: FormData): Promise<ActionResult> {
+  const ip = await clientIp();
+  const rl = await checkRateLimit({
+    name: "register",
+    identifier: ip,
+    limit: 5,
+    window: "1h",
+  });
+  if (!rl.ok) {
+    return { ok: false, error: "Too many registrations from this IP. Try again later." };
+  }
+
   const parsed = registerSchema.safeParse({
     name: formData.get("name"),
     email: formData.get("email"),
@@ -56,6 +78,17 @@ export async function loginAction(formData: FormData): Promise<ActionResult> {
     password: formData.get("password"),
   });
   if (!parsed.success) return { ok: false, error: "Invalid email or password" };
+
+  const ip = await clientIp();
+  const rl = await checkRateLimit({
+    name: "login",
+    identifier: `${ip}:${parsed.data.email}`,
+    limit: 5,
+    window: "15m",
+  });
+  if (!rl.ok) {
+    return { ok: false, error: "Too many login attempts. Try again in 15 minutes." };
+  }
 
   try {
     await signIn("credentials", {

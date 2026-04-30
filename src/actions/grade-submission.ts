@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { gradeSubmissionSchema } from "@/lib/validators";
 import { sendGradeEmail } from "@/lib/email";
+import { audit } from "@/lib/audit";
 import type { ActionResult } from "@/actions/auth";
 
 export async function gradeSubmission(formData: FormData): Promise<ActionResult> {
@@ -41,6 +42,15 @@ export async function gradeSubmission(formData: FormData): Promise<ActionResult>
     pageSlug: updated.pageSlug,
     status,
     feedback: updated.feedback,
+  });
+
+  await audit({
+    actorId: session.user.id,
+    actorEmail: session.user.email,
+    action: `submission.${status.toLowerCase()}`,
+    targetType: "submission",
+    targetId: id,
+    metadata: { pageSlug: updated.pageSlug, attempt: updated.attemptNumber },
   });
 
   revalidatePath("/admin/submissions");

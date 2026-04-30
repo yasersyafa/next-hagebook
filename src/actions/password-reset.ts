@@ -1,6 +1,7 @@
 "use server";
 
 import bcrypt from "bcryptjs";
+import { headers } from "next/headers";
 import { prisma } from "@/lib/db";
 import { signIn } from "@/lib/auth";
 import {
@@ -9,9 +10,22 @@ import {
 } from "@/lib/validators";
 import { hashToken, randomToken, tokenExpiry } from "@/lib/tokens";
 import { sendResetEmail } from "@/lib/email";
+import { checkRateLimit } from "@/lib/rate-limit";
 import type { ActionResult } from "@/actions/auth";
 
 export async function requestPasswordReset(formData: FormData): Promise<ActionResult> {
+  const h = await headers();
+  const ip =
+    h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? h.get("x-real-ip") ?? "unknown";
+  const rl = await checkRateLimit({
+    name: "forgot",
+    identifier: ip,
+    limit: 3,
+    window: "1h",
+  });
+  // Silently succeed even if rate-limited (no enumeration).
+  if (!rl.ok) return { ok: true };
+
   const parsed = forgotPasswordSchema.safeParse({
     email: formData.get("email"),
   });
@@ -67,7 +81,7 @@ export async function confirmPasswordReset(formData: FormData): Promise<ActionRe
   await prisma.$transaction([
     prisma.user.update({
       where: { id: record.userId },
-      data: { passwordHash },
+      data: { passwordHash, passwordChangedAt: new Date() },
     }),
     prisma.passwordResetToken.update({
       where: { id: record.id },

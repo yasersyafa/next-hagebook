@@ -103,15 +103,13 @@ function Section({
                     {u.createdAt.toLocaleDateString()}
                   </TableCell>
                   <TableCell className="text-right">
-                    {u.role === "ADMIN" ? (
-                      <span className="text-xs text-muted-foreground">Protected</span>
-                    ) : (
-                      <UserDecisionButtons
-                        userId={u.id}
-                        email={u.email}
-                        status={u.status}
-                      />
-                    )}
+                    <UserDecisionButtons
+                      userId={u.id}
+                      email={u.email}
+                      name={u.name}
+                      role={u.role}
+                      status={u.status}
+                    />
                   </TableCell>
                 </TableRow>
               ))}

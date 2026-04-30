@@ -34,6 +34,11 @@ export async function Nav() {
                   Dashboard
                 </Link>
               ) : null}
+              {user.role !== "ADMIN" ? (
+                <Link href="/account" className={buttonVariants({ variant: "ghost", size: "sm" })}>
+                  Account
+                </Link>
+              ) : null}
               {user.role === "ADMIN" ? (
                 <>
                   <Link href="/admin/pages" className={buttonVariants({ variant: "ghost", size: "sm" })}>
@@ -44,6 +49,9 @@ export async function Nav() {
                   </Link>
                   <Link href="/admin/submissions" className={buttonVariants({ variant: "ghost", size: "sm" })}>
                     Submissions
+                  </Link>
+                  <Link href="/admin/audit" className={buttonVariants({ variant: "ghost", size: "sm" })}>
+                    Audit
                   </Link>
                 </>
               ) : null}

@@ -57,6 +57,11 @@ export function MobileMenu({ user }: { user: MenuUser }) {
                   Dashboard
                 </Link>
               ) : null}
+              {user.role !== "ADMIN" ? (
+                <Link href="/account" className={linkClass} onClick={close}>
+                  Account
+                </Link>
+              ) : null}
               {user.role === "ADMIN" ? (
                 <>
                   <Link href="/admin/pages" className={linkClass} onClick={close}>
@@ -67,6 +72,9 @@ export function MobileMenu({ user }: { user: MenuUser }) {
                   </Link>
                   <Link href="/admin/submissions" className={linkClass} onClick={close}>
                     Submissions
+                  </Link>
+                  <Link href="/admin/audit" className={linkClass} onClick={close}>
+                    Audit
                   </Link>
                 </>
               ) : null}

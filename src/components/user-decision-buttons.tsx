@@ -14,7 +14,7 @@ import {
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { decideUser, deleteUser } from "@/actions/approve-user";
+import { decideUser, deleteUser, setUserRole, updateUser } from "@/actions/approve-user";
 
 type Action = "APPROVE" | "REJECT" | "DEACTIVATE" | "REACTIVATE";
 
@@ -48,10 +48,14 @@ const actionLabels: Record<Action, { title: string; desc: string; confirm: strin
 export function UserDecisionButtons({
   userId,
   email,
+  name,
+  role,
   status,
 }: {
   userId: string;
   email: string;
+  name?: string | null;
+  role: "STUDENT" | "ADMIN";
   status: "PENDING" | "APPROVED" | "REJECTED" | "DEACTIVATED";
 }) {
   const router = useRouter();
@@ -61,6 +65,42 @@ export function UserDecisionButtons({
   const [confirmAction, setConfirmAction] = useState<Action | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteEmailInput, setDeleteEmailInput] = useState("");
+  const [editOpen, setEditOpen] = useState(false);
+  const [editEmail, setEditEmail] = useState(email);
+  const [editName, setEditName] = useState(name ?? "");
+  const [promoteOpen, setPromoteOpen] = useState(false);
+
+  function runRole(next: "STUDENT" | "ADMIN") {
+    const fd = new FormData();
+    fd.set("userId", userId);
+    fd.set("role", next);
+    startTransition(async () => {
+      const result = await setUserRole(fd);
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+      toast.success(next === "ADMIN" ? "Promoted to admin" : "Demoted to student");
+      router.refresh();
+    });
+  }
+
+  function runEdit() {
+    const fd = new FormData();
+    fd.set("userId", userId);
+    fd.set("email", editEmail);
+    fd.set("name", editName);
+    startTransition(async () => {
+      const result = await updateUser(fd);
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+      toast.success("User updated");
+      setEditOpen(false);
+      router.refresh();
+    });
+  }
 
   function runAction(action: Action) {
     const fd = new FormData();
@@ -146,6 +186,19 @@ export function UserDecisionButtons({
             </DropdownMenuItem>
           ) : null}
           <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => setEditOpen(true)}>
+            Edit details
+          </DropdownMenuItem>
+          {role === "STUDENT" ? (
+            <DropdownMenuItem onClick={() => setPromoteOpen(true)}>
+              Promote to admin
+            </DropdownMenuItem>
+          ) : (
+            <DropdownMenuItem onClick={() => setPromoteOpen(true)}>
+              Demote to student
+            </DropdownMenuItem>
+          )}
+          <DropdownMenuSeparator />
           <DropdownMenuItem
             onClick={() => setDeleteOpen(true)}
             className="text-destructive focus:text-destructive"
@@ -154,6 +207,58 @@ export function UserDecisionButtons({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <ConfirmDialog
+        open={editOpen}
+        onOpenChange={(o) => {
+          setEditOpen(o);
+          if (!o) {
+            setEditEmail(email);
+            setEditName(name ?? "");
+          }
+        }}
+        title="Edit user details"
+        description={
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label htmlFor={`edit-email-${userId}`}>Email</Label>
+              <Input
+                id={`edit-email-${userId}`}
+                type="email"
+                value={editEmail}
+                onChange={(e) => setEditEmail(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor={`edit-name-${userId}`}>Name</Label>
+              <Input
+                id={`edit-name-${userId}`}
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+              />
+            </div>
+          </div>
+        }
+        confirmLabel="Save"
+        onConfirm={runEdit}
+      />
+
+      <ConfirmDialog
+        open={promoteOpen}
+        onOpenChange={setPromoteOpen}
+        title={role === "STUDENT" ? "Promote to admin?" : "Demote to student?"}
+        description={
+          role === "STUDENT"
+            ? `Grants admin access to all data and lifecycle actions. Reversible.`
+            : `Removes admin access. Cannot demote the last admin.`
+        }
+        confirmLabel={role === "STUDENT" ? "Promote" : "Demote"}
+        destructive={role === "ADMIN"}
+        onConfirm={() => {
+          setPromoteOpen(false);
+          runRole(role === "STUDENT" ? "ADMIN" : "STUDENT");
+        }}
+      />
 
       {confirmAction ? (
         <ConfirmDialog
