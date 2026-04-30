@@ -5,7 +5,7 @@ import { LoginForm } from "@/components/login-form";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ verified?: string; registered?: string }>;
+  searchParams: Promise<{ verified?: string; registered?: string; reset?: string }>;
 }) {
   const sp = await searchParams;
   const banner =
@@ -13,7 +13,9 @@ export default async function LoginPage({
       ? "Email verified. Sign in to continue."
       : sp.registered === "1"
         ? "Check your inbox for a verification link, then sign in."
-        : null;
+        : sp.reset === "1"
+          ? "Password updated. Sign in with the new password."
+          : null;
 
   return (
     <div className="min-h-svh flex items-center justify-center px-4 py-12">
@@ -29,12 +31,17 @@ export default async function LoginPage({
             </div>
           ) : null}
           <LoginForm />
-          <p className="text-sm text-muted-foreground">
-            No account?{" "}
-            <Link href="/register" className="text-primary underline-offset-4 hover:underline">
-              Register
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <Link href="/forgot" className="text-primary underline-offset-4 hover:underline">
+              Forgot password?
             </Link>
-          </p>
+            <span>
+              No account?{" "}
+              <Link href="/register" className="text-primary underline-offset-4 hover:underline">
+                Register
+              </Link>
+            </span>
+          </div>
         </CardContent>
       </Card>
     </div>

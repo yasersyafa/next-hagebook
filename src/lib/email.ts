@@ -142,6 +142,29 @@ export async function sendVerifyEmail(args: {
   return send({ to: args.to, subject, html, text });
 }
 
+export async function sendResetEmail(args: {
+  to: string;
+  name?: string | null;
+  token: string;
+}) {
+  const greeting = args.name ? `Hi ${args.name},` : "Hi,";
+  const subject = "Reset your hagebook password";
+  const intro = `${greeting} we received a request to reset your hagebook password.`;
+  const ctaHref = `${appUrl}/reset?token=${encodeURIComponent(args.token)}`;
+  const body = `<p style="margin:0 0 12px;font-size:14px;line-height:1.6;color:#3f3f46;">Click the button below to choose a new password. The link expires in 1 hour and can only be used once.</p>
+<p style="margin:0 0 12px;font-size:13px;line-height:1.6;color:#71717a;">If you didn't request this, ignore this email — your password stays the same.</p>`;
+  const html = shell(subject, intro, "Reset password", ctaHref, body);
+  const text = [
+    intro,
+    "",
+    `Reset: ${ctaHref}`,
+    "",
+    "Link expires in 1 hour, single-use.",
+    "If you didn't request this, ignore this email.",
+  ].join("\n");
+  return send({ to: args.to, subject, html, text });
+}
+
 export async function sendRejectionEmail(args: { to: string; name?: string | null }) {
   const greeting = args.name ? `Hi ${args.name},` : "Hi,";
   const subject = "Update on your hagebook application";

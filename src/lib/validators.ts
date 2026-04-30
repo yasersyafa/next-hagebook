@@ -67,6 +67,24 @@ export const pageDeleteSchema = z.object({
   id: z.string().min(1),
 });
 
+export const forgotPasswordSchema = z.object({
+  email: z.string().email("Invalid email"),
+});
+
+export const resetPasswordSchema = z
+  .object({
+    token: z.string().min(1, "Missing token"),
+    password: z.string().min(8, "Min 8 chars").max(100),
+    confirm: z.string().min(1),
+  })
+  .refine((data) => data.password === data.confirm, {
+    path: ["confirm"],
+    message: "Passwords don't match",
+  });
+
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type SubmitAssignmentInput = z.infer<typeof submitAssignmentSchema>;
