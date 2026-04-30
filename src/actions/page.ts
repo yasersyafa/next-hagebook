@@ -242,3 +242,49 @@ export async function createPageAndRedirect(formData: FormData) {
   }
   return result;
 }
+
+export async function duplicatePage(formData: FormData): Promise<ActionResult<{ id: string }>> {
+  const admin = await requireAdmin();
+  if (!admin) return { ok: false, error: "Forbidden" };
+
+  const id = String(formData.get("id") ?? "");
+  if (!id) return { ok: false, error: "Missing id" };
+
+  const source = await prisma.page.findUnique({
+    where: { id },
+    include: { tags: { select: { id: true } } },
+  });
+  if (!source) return { ok: false, error: "Page not found" };
+
+  // Generate unique slug: append -copy, then -copy-2, etc.
+  const baseSlug = `${source.slug}-copy`.slice(0, 80);
+  let slug = baseSlug;
+  let counter = 2;
+  while (await prisma.page.findUnique({ where: { slug } })) {
+    const suffix = `-${counter}`;
+    slug = `${baseSlug.slice(0, 80 - suffix.length)}${suffix}`;
+    counter += 1;
+    if (counter > 50) return { ok: false, error: "Could not generate unique slug" };
+  }
+
+  const created = await prisma.page.create({
+    data: {
+      slug,
+      title: `${source.title} (copy)`,
+      description: source.description,
+      order: source.order,
+      contentHtml: source.contentHtml,
+      assignmentPrompt: source.assignmentPrompt,
+      status: "DRAFT",
+      authorId: admin.id,
+      categoryId: source.categoryId,
+      tags: source.tags.length
+        ? { connect: source.tags.map((t) => ({ id: t.id })) }
+        : undefined,
+    },
+    select: { id: true },
+  });
+
+  revalidatePath("/admin/pages");
+  return { ok: true, data: { id: created.id } };
+}

@@ -19,7 +19,20 @@ model User {
   submissions    Submission[]
   pages          Page[]               @relation("PageAuthor")
   passwordResets PasswordResetToken[]
+  lessonReads    LessonRead[]
   createdAt      DateTime             @default(now())
+}
+
+model LessonRead {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pageSlug  String
+  readAt    DateTime @default(now())
+
+  @@unique([userId, pageSlug])
+  @@index([userId])
+  @@index([pageSlug])
 }
 
 model PasswordResetToken {

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { listPublishedPages } from "@/lib/pages";
@@ -12,6 +13,11 @@ const variant: Record<SubmissionStatus, "secondary" | "default" | "destructive">
   PENDING: "secondary",
   PASS: "default",
   FAIL: "destructive",
+};
+
+export const metadata: Metadata = {
+  title: "Dashboard",
+  robots: { index: false, follow: false },
 };
 
 export default async function DashboardPage() {

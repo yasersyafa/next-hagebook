@@ -1,6 +1,12 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ForgotPasswordForm } from "@/components/forgot-password-form";
+
+export const metadata: Metadata = {
+  title: "Forgot password",
+  robots: { index: false, follow: false },
+};
 
 export default function ForgotPage() {
   return (

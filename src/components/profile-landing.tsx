@@ -20,9 +20,26 @@ const profile = {
   ],
 };
 
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "HAGE Games",
+  alternateName: "HAGEgames",
+  url: "https://hagegames.com",
+  logo: "https://hagegames.com/logo.png",
+  description:
+    "Indonesian indie game platform. Discover, play, and share browser games.",
+  sameAs: ["https://hagegames.com"],
+  email: "contact@hagegames.com",
+};
+
 export function ProfileLanding({ signedIn }: { signedIn: boolean }) {
   return (
     <div className="container mx-auto max-w-3xl px-4 py-16 space-y-12">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <section className="space-y-6">
         <div className="flex items-start gap-6 flex-wrap">
           <div

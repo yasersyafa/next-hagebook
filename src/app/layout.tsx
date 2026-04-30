@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider, themeInitScript } from "@/components/theme-provider";
 import { Nav } from "@/components/nav";
 import { Footer } from "@/components/footer";
+import { CookieBanner } from "@/components/cookie-banner";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -19,9 +20,41 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
 });
 
+const SITE_URL = process.env.NEXTAUTH_URL ?? "https://next-hagebook.vercel.app";
+
 export const metadata: Metadata = {
-  title: "Hagebook",
-  description: "Read lessons. Submit assignments by link.",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "hagebook · a HAGE Games handbook",
+    template: "%s · hagebook",
+  },
+  description:
+    "Short, opinionated lessons on shipping web apps and games. Read, build, submit a link, get feedback.",
+  keywords: [
+    "hagebook",
+    "HAGE Games",
+    "indie games",
+    "game development",
+    "tutorial",
+  ],
+  authors: [{ name: "HAGE Games" }],
+  openGraph: {
+    type: "website",
+    siteName: "hagebook",
+    title: "hagebook · a HAGE Games handbook",
+    description:
+      "Read short lessons. Submit your work as a link. Get feedback.",
+    url: SITE_URL,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "hagebook",
+    description: "Short, opinionated lessons. Ship the thing.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({
@@ -47,8 +80,11 @@ export default function RootLayout({
             Skip to main content
           </a>
           <Nav />
-          <main id="main-content" className="flex-1">{children}</main>
+          <main id="main-content" className="flex-1">
+            {children}
+          </main>
           <Footer />
+          <CookieBanner />
           <Toaster richColors position="top-right" />
         </ThemeProvider>
       </body>

@@ -1,15 +1,43 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { listPublishedPages, getPublishedPage } from "@/lib/pages";
 import { sanitizeHtml } from "@/lib/sanitize";
 import { SubmitLinkForm } from "@/components/submit-link-form";
 import { SubmissionStatusCard } from "@/components/submission-status-card";
+import { MarkReadButton } from "@/components/mark-read-button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const page = await getPublishedPage(slug);
+  if (!page) return { title: "Lesson not found" };
+  const description = page.description ?? `Read "${page.title}" on hagebook.`;
+  return {
+    title: page.title,
+    description,
+    openGraph: {
+      title: page.title,
+      description,
+      type: "article",
+      publishedTime: page.publishedAt?.toISOString(),
+      modifiedTime: page.updatedAt.toISOString(),
+    },
+    twitter: {
+      title: page.title,
+      description,
+    },
+  };
+}
 
 export default async function PagePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -19,7 +47,7 @@ export default async function PagePage({ params }: { params: Promise<{ slug: str
   const session = await auth();
   const userId = session?.user?.id;
 
-  const [allPages, attempts] = await Promise.all([
+  const [allPages, attempts, lessonRead] = await Promise.all([
     listPublishedPages(),
     userId
       ? prisma.submission.findMany({
@@ -27,6 +55,11 @@ export default async function PagePage({ params }: { params: Promise<{ slug: str
           orderBy: { attemptNumber: "desc" },
         })
       : Promise.resolve([]),
+    userId
+      ? prisma.lessonRead.findUnique({
+          where: { userId_pageSlug: { userId, pageSlug: page.slug } },
+        })
+      : Promise.resolve(null),
   ]);
 
   const latest = attempts[0] ?? null;
@@ -58,6 +91,12 @@ export default async function PagePage({ params }: { params: Promise<{ slug: str
         />
       </article>
 
+      {userId ? (
+        <div className="flex justify-end">
+          <MarkReadButton pageSlug={page.slug} initialRead={Boolean(lessonRead)} />
+        </div>
+      ) : null}
+
       {page.assignmentPrompt ? (
         <Card>
           <CardHeader>
@@ -71,7 +110,13 @@ export default async function PagePage({ params }: { params: Promise<{ slug: str
         </Card>
       ) : null}
 
-      <div className="flex items-center justify-between pt-6 border-t">
+      <div className="pt-6 border-t space-y-3">
+        {idx >= 0 ? (
+          <p className="text-xs text-muted-foreground text-center">
+            Lesson {idx + 1} of {allPages.length}
+          </p>
+        ) : null}
+        <div className="flex items-center justify-between gap-2">
         {prev ? (
           <Link href={`/pages/${prev.slug}`} className={buttonVariants({ variant: "outline" })}>
             ← {prev.title}
@@ -86,6 +131,7 @@ export default async function PagePage({ params }: { params: Promise<{ slug: str
         ) : (
           <span />
         )}
+        </div>
       </div>
     </div>
   );

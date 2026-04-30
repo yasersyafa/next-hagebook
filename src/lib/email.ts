@@ -26,12 +26,30 @@ function getTransport(): Transporter | null {
   return transporter;
 }
 
+export type EmailTemplateName =
+  | "approval"
+  | "rejection"
+  | "reset"
+  | "grade-pass"
+  | "grade-fail";
+
 type SendArgs = {
   to: string;
   subject: string;
   html: string;
   text: string;
 };
+
+async function attemptSend(tx: Transporter, args: SendArgs) {
+  return tx.sendMail({
+    from: fromAddress,
+    replyTo,
+    to: args.to,
+    subject: args.subject,
+    html: args.html,
+    text: args.text,
+  });
+}
 
 async function send({ to, subject, html, text }: SendArgs) {
   const tx = getTransport();
@@ -42,21 +60,21 @@ async function send({ to, subject, html, text }: SendArgs) {
     return { ok: true as const, skipped: true };
   }
   try {
-    const info = await tx.sendMail({
-      from: fromAddress,
-      replyTo,
-      to,
-      subject,
-      html,
-      text,
-    });
+    const info = await attemptSend(tx, { to, subject, html, text });
     return { ok: true as const, id: info.messageId };
   } catch (err) {
-    console.error("[email] send failed:", err);
-    return {
-      ok: false as const,
-      error: err instanceof Error ? err.message : "Email send failed",
-    };
+    console.warn("[email] first attempt failed, retrying in 500ms:", err);
+    await new Promise((r) => setTimeout(r, 500));
+    try {
+      const info = await attemptSend(tx, { to, subject, html, text });
+      return { ok: true as const, id: info.messageId, retried: true };
+    } catch (err2) {
+      console.error("[email] send failed after retry:", err2);
+      return {
+        ok: false as const,
+        error: err2 instanceof Error ? err2.message : "Email send failed",
+      };
+    }
   }
 }
 
@@ -229,4 +247,76 @@ export async function sendRejectionEmail(args: {
     "If you think this was a mistake or want to appeal, contact contact@hagegames.com.",
   ].join("\n");
   return send({ to: args.to, subject, html, text });
+}
+
+export function renderEmailPreview(template: EmailTemplateName): {
+  subject: string;
+  html: string;
+} {
+  const sampleName = "Sample User";
+  const sampleSlug = "lesson-01";
+  const sampleTitle = "Lesson 1: Hello, Next.js";
+  switch (template) {
+    case "approval": {
+      const subject = "Your hagebook account is approved";
+      const intro = `Hi ${sampleName}, good news — an admin has approved your hagebook account.`;
+      const html = shell(
+        subject,
+        intro,
+        "Sign in",
+        `${appUrl}/login`,
+        `<p style="margin:0 0 12px;font-size:15px;line-height:1.6;color:#3f3f46;">You can now sign in, read lessons, and submit assignments.</p>`,
+      );
+      return { subject, html };
+    }
+    case "rejection": {
+      const subject = "Update on your hagebook application";
+      const intro = `Hi ${sampleName}, thanks for your interest in hagebook. After review, your application was not approved at this time.`;
+      const html = shell(
+        subject,
+        intro,
+        "",
+        "",
+        `<p style="margin:0 0 12px;font-size:15px;line-height:1.6;color:#3f3f46;">If you think this was a mistake or want to appeal, reply to this email or contact <a href="mailto:contact@hagegames.com" style="color:#ff005a;">contact@hagegames.com</a>.</p>`,
+      );
+      return { subject, html };
+    }
+    case "reset": {
+      const subject = "Reset your hagebook password";
+      const intro = `Hi ${sampleName}, we received a request to reset your hagebook password.`;
+      const html = shell(
+        subject,
+        intro,
+        "Reset password",
+        `${appUrl}/reset?token=PREVIEW`,
+        `<p style="margin:0 0 12px;font-size:14px;line-height:1.6;color:#3f3f46;">Click the button below to choose a new password. The link expires in 1 hour and can only be used once.</p>`,
+      );
+      return { subject, html };
+    }
+    case "grade-pass":
+    case "grade-fail": {
+      const passed = template === "grade-pass";
+      const subject = passed
+        ? `Your submission passed: ${sampleTitle}`
+        : `Your submission needs another look: ${sampleTitle}`;
+      const intro = passed
+        ? `Hi ${sampleName}, an admin reviewed your submission for "${sampleTitle}" and marked it PASS.`
+        : `Hi ${sampleName}, an admin reviewed your submission for "${sampleTitle}" and marked it FAIL. Read the feedback, then re-submit when ready.`;
+      const badgeBg = passed ? "#16a34a" : "#dc2626";
+      const badgeLabel = passed ? "PASS" : "FAIL";
+      const feedback = passed ? "Nice clean code, ship it." : "Add error handling around the fetch call.";
+      const html = shell(
+        subject,
+        intro,
+        "View lesson",
+        `${appUrl}/pages/${sampleSlug}`,
+        `<div style="margin:0 0 12px;"><span style="display:inline-block;padding:4px 10px;border-radius:999px;background:${badgeBg};color:#ffffff;font-size:12px;font-weight:600;">${badgeLabel}</span></div>
+<div style="margin:16px 0;padding:14px 16px;border-left:3px solid ${brand};background:#fafafa;border-radius:4px;">
+  <p style="margin:0 0 4px;font-size:12px;font-weight:600;color:#71717a;text-transform:uppercase;">Feedback</p>
+  <p style="margin:0;font-size:14px;line-height:1.6;color:#3f3f46;">${escapeHtml(feedback)}</p>
+</div>`,
+      );
+      return { subject, html };
+    }
+  }
 }

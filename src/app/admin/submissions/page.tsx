@@ -1,5 +1,13 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
+import type { Metadata } from "next";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+
+export const metadata: Metadata = {
+  title: "Submissions · Admin",
+  robots: { index: false, follow: false },
+};
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { GradeForm } from "@/components/grade-form";
@@ -13,6 +21,9 @@ const variant: Record<SubmissionStatus, "secondary" | "default" | "destructive">
 };
 
 export default async function AdminSubmissionsPage() {
+  const session = await auth();
+  if (session?.user?.role !== "ADMIN") notFound();
+
   const submissions = await prisma.submission.findMany({
     orderBy: [{ updatedAt: "desc" }],
     include: {

@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { setPageStatus, deletePage } from "@/actions/page";
+import { setPageStatus, deletePage, duplicatePage } from "@/actions/page";
 
 export function PageRowActions({
   id,
@@ -57,6 +57,25 @@ export function PageRowActions({
     });
   }
 
+  function onDuplicate() {
+    const fd = new FormData();
+    fd.set("id", id);
+    startTransition(async () => {
+      const result = await duplicatePage(fd);
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+      const newId = (result.data as { id?: string } | undefined)?.id;
+      toast.success("Duplicated as draft");
+      if (newId) {
+        router.push(`/admin/pages/${newId}/edit`);
+      } else {
+        router.refresh();
+      }
+    });
+  }
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -77,6 +96,9 @@ export function PageRowActions({
         </DropdownMenuItem>
         <DropdownMenuItem onClick={toggleStatus}>
           {status === "PUBLISHED" ? "Unpublish" : "Publish"}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={onDuplicate}>
+          Duplicate
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem

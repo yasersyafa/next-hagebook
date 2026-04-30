@@ -26,16 +26,24 @@ export async function registerUser(formData: FormData): Promise<ActionResult> {
   if (existing) return { ok: false, error: "Email already registered" };
 
   const passwordHash = await bcrypt.hash(password, 10);
-  const isBootstrap = email === process.env.BOOTSTRAP_ADMIN_EMAIL;
+
+  // Bootstrap admin: only the very first registration matching BOOTSTRAP_ADMIN_EMAIL
+  // becomes admin. Once any admin exists, treat as a normal student registration.
+  const isBootstrapEmail = email === process.env.BOOTSTRAP_ADMIN_EMAIL;
+  let promoteToAdmin = false;
+  if (isBootstrapEmail) {
+    const adminCount = await prisma.user.count({ where: { role: "ADMIN" } });
+    promoteToAdmin = adminCount === 0;
+  }
 
   await prisma.user.create({
     data: {
       name,
       email,
       passwordHash,
-      role: isBootstrap ? "ADMIN" : "STUDENT",
-      status: isBootstrap ? "APPROVED" : "PENDING",
-      approvedAt: isBootstrap ? new Date() : null,
+      role: promoteToAdmin ? "ADMIN" : "STUDENT",
+      status: promoteToAdmin ? "APPROVED" : "PENDING",
+      approvedAt: promoteToAdmin ? new Date() : null,
     },
   });
 

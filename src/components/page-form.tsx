@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { toast } from "sonner";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +11,15 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { PageEditor } from "@/components/page-editor";
+import { Skeleton } from "@/components/ui/skeleton";
+
+const PageEditor = dynamic(
+  () => import("@/components/page-editor").then((m) => m.PageEditor),
+  {
+    ssr: false,
+    loading: () => <Skeleton className="h-[420px] w-full rounded-lg" />,
+  },
+);
 import {
   createPage,
   updatePage,

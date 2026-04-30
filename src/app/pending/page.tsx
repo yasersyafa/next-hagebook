@@ -1,7 +1,13 @@
+import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { SignOutButton } from "@/components/sign-out-button";
+
+export const metadata: Metadata = {
+  title: "Account status",
+  robots: { index: false, follow: false },
+};
 
 const titles: Record<string, string> = {
   PENDING: "Awaiting approval",

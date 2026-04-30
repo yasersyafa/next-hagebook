@@ -1,5 +1,13 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
+import type { Metadata } from "next";
+import { auth } from "@/lib/auth";
 import { listAllPages } from "@/lib/pages";
+
+export const metadata: Metadata = {
+  title: "Pages · Admin",
+  robots: { index: false, follow: false },
+};
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -7,6 +15,9 @@ import { buttonVariants } from "@/components/ui/button";
 import { PageRowActions } from "@/components/page-row-actions";
 
 export default async function AdminPagesPage() {
+  const session = await auth();
+  if (session?.user?.role !== "ADMIN") notFound();
+
   const pages = await listAllPages();
   const drafts = pages.filter((p) => p.status === "DRAFT");
   const published = pages.filter((p) => p.status === "PUBLISHED");

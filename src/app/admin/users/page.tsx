@@ -1,4 +1,12 @@
+import { notFound } from "next/navigation";
+import type { Metadata } from "next";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+
+export const metadata: Metadata = {
+  title: "Users · Admin",
+  robots: { index: false, follow: false },
+};
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +30,9 @@ type Row = {
 };
 
 export default async function AdminUsersPage() {
+  const session = await auth();
+  if (session?.user?.role !== "ADMIN") notFound();
+
   const users = await prisma.user.findMany({
     orderBy: [{ status: "asc" }, { createdAt: "desc" }],
   });

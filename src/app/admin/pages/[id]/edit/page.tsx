@@ -1,12 +1,22 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
+import { auth } from "@/lib/auth";
 import { getPageById, listCategories } from "@/lib/pages";
 import { PageForm } from "@/components/page-form";
+
+export const metadata: Metadata = {
+  title: "Edit page · Admin",
+  robots: { index: false, follow: false },
+};
 
 export default async function EditPagePage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const session = await auth();
+  if (session?.user?.role !== "ADMIN") notFound();
+
   const { id } = await params;
   const [page, categories] = await Promise.all([getPageById(id), listCategories()]);
   if (!page) notFound();
