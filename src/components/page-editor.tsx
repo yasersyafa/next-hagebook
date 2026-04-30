@@ -4,6 +4,7 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
+import Image from "@tiptap/extension-image";
 import { PageEditorToolbar } from "@/components/page-editor-toolbar";
 
 export function PageEditor({
@@ -21,6 +22,11 @@ export function PageEditor({
         openOnClick: false,
         autolink: true,
         HTMLAttributes: { rel: "noopener noreferrer", target: "_blank" },
+      }),
+      Image.configure({
+        inline: false,
+        allowBase64: false,
+        HTMLAttributes: { class: "rounded-md max-w-full h-auto" },
       }),
       Placeholder.configure({ placeholder: "Write the lesson..." }),
     ],

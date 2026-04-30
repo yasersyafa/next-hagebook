@@ -1,6 +1,8 @@
 "use client";
 
+import { useRef, useState } from "react";
 import type { Editor } from "@tiptap/react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 
 function ToolbarButton({
@@ -33,6 +35,9 @@ function ToolbarButton({
 }
 
 export function PageEditorToolbar({ editor }: { editor: Editor | null }) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
   if (!editor) return null;
 
   const toggleLink = () => {
@@ -46,8 +51,54 @@ export function PageEditorToolbar({ editor }: { editor: Editor | null }) {
     editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
   };
 
+  const onPickImage = () => {
+    fileInputRef.current?.click();
+  };
+
+  const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Pick an image file");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image too large (max 5MB)");
+      return;
+    }
+    setUploading(true);
+    try {
+      const res = await fetch("/api/upload-image", {
+        method: "POST",
+        headers: {
+          "content-type": file.type,
+          "x-filename": file.name,
+        },
+        body: file,
+      });
+      const data = (await res.json()) as { url?: string; error?: string };
+      if (!res.ok || !data.url) {
+        toast.error(data.error ?? "Upload failed");
+        return;
+      }
+      editor.chain().focus().setImage({ src: data.url, alt: file.name }).run();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
     <div className="flex flex-wrap items-center gap-1 border-b bg-muted/40 p-1">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/png,image/jpeg,image/gif,image/webp"
+        className="sr-only"
+        onChange={onFileChange}
+      />
       <ToolbarButton
         label="Bold"
         active={editor.isActive("bold")}
@@ -133,6 +184,13 @@ export function PageEditorToolbar({ editor }: { editor: Editor | null }) {
         onClick={toggleLink}
       >
         🔗
+      </ToolbarButton>
+      <ToolbarButton
+        label={uploading ? "Uploading image..." : "Image"}
+        onClick={onPickImage}
+        disabled={uploading}
+      >
+        {uploading ? "…" : "🖼"}
       </ToolbarButton>
       <ToolbarButton
         label="Horizontal rule"
