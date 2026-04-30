@@ -8,8 +8,12 @@ import { sanitizeHtml } from "@/lib/sanitize";
 import { SubmitLinkForm } from "@/components/submit-link-form";
 import { SubmissionStatusCard } from "@/components/submission-status-card";
 import { MarkReadButton } from "@/components/mark-read-button";
+import { ReadingProgress } from "@/components/reading-progress";
+import { LessonToc } from "@/components/lesson-toc";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
+import { estimateReadingTime } from "@/lib/reading-time";
 
 export const dynamic = "force-dynamic";
 
@@ -70,22 +74,36 @@ export default async function PagePage({ params }: { params: Promise<{ slug: str
   const next = idx >= 0 && idx < allPages.length - 1 ? allPages[idx + 1] : null;
 
   const safeHtml = sanitizeHtml(page.contentHtml);
+  const { minutes } = estimateReadingTime(page.contentHtml);
 
   return (
-    <div className="container mx-auto max-w-3xl px-4 py-10 space-y-8">
+    <>
+      <ReadingProgress />
+      <div className="container mx-auto max-w-6xl px-4 py-10 grid gap-10 lg:grid-cols-[1fr_240px]">
+        <div className="space-y-8 min-w-0">
       <div>
         <Link href="/" className="text-sm text-muted-foreground hover:text-primary">
           ← All lessons
         </Link>
       </div>
 
-      <article className="prose prose-neutral dark:prose-invert max-w-none">
-        <h1 className="text-3xl font-semibold tracking-tight">{page.title}</h1>
-        {page.description ? (
-          <p className="text-muted-foreground">{page.description}</p>
+      <header className="space-y-3">
+        {page.category ? (
+          <Badge variant="outline" className="text-xs">
+            {page.category.name}
+          </Badge>
         ) : null}
+        <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight">{page.title}</h1>
+        {page.description ? (
+          <p className="text-muted-foreground text-lg">{page.description}</p>
+        ) : null}
+        <p className="text-xs text-muted-foreground">
+          {minutes} min read · Updated {page.updatedAt.toLocaleDateString()}
+        </p>
+      </header>
+
+      <article className="prose prose-neutral dark:prose-invert max-w-none" id="lesson-body">
         <div
-          className="mt-6"
           // contentHtml sanitized at save time + here (defense in depth)
           dangerouslySetInnerHTML={{ __html: safeHtml }}
         />
@@ -133,6 +151,13 @@ export default async function PagePage({ params }: { params: Promise<{ slug: str
         )}
         </div>
       </div>
-    </div>
+        </div>
+        <aside className="hidden lg:block">
+          <div className="sticky top-20">
+            <LessonToc html={safeHtml} />
+          </div>
+        </aside>
+      </div>
+    </>
   );
 }

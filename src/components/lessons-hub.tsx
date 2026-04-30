@@ -84,9 +84,44 @@ export function LessonsHub({
         </div>
       </section>
 
+      {pages[0] && pages.length > 1 ? (
+        <section>
+          <p className="mb-3 text-xs uppercase tracking-wider text-primary font-medium">
+            Featured
+          </p>
+          <Link
+            href={`/pages/${pages[0].slug}`}
+            className="block rounded-2xl border-2 border-primary/30 bg-gradient-to-br from-primary/10 via-background to-background p-6 sm:p-8 hover:border-primary/60 transition-colors group"
+          >
+            <div className="flex items-start gap-2 flex-wrap mb-3">
+              <Badge variant="default" className="text-xs">Start here</Badge>
+              {pages[0].category ? (
+                <Badge variant="outline" className="text-xs">
+                  {pages[0].category.name}
+                </Badge>
+              ) : null}
+              {pages[0].assignmentPrompt ? (
+                <Badge variant="secondary" className="text-xs">Assignment</Badge>
+              ) : null}
+            </div>
+            <h3 className="text-2xl sm:text-3xl font-semibold tracking-tight group-hover:text-primary transition-colors">
+              {pages[0].title}
+            </h3>
+            {pages[0].description ? (
+              <p className="mt-2 text-muted-foreground max-w-2xl">
+                {pages[0].description}
+              </p>
+            ) : null}
+            <p className="mt-4 text-sm text-primary font-medium">
+              Read lesson →
+            </p>
+          </Link>
+        </section>
+      ) : null}
+
       <section className="space-y-4">
         <div className="flex items-center justify-between gap-4 flex-wrap">
-          <h2 className="text-2xl font-semibold tracking-tight">Lessons</h2>
+          <h2 className="text-2xl font-semibold tracking-tight">All lessons</h2>
           <div className="inline-flex items-center rounded-lg border bg-muted/50 p-1">
             {tabs.map((t) => (
               <button

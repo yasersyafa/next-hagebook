@@ -2,6 +2,7 @@ import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { LogoMark } from "@/components/logo";
 
 const profile = {
   name: "HAGE",
@@ -44,12 +45,9 @@ export function ProfileLanding({ signedIn }: { signedIn: boolean }) {
         <div className="flex items-start gap-6 flex-wrap">
           <div
             aria-hidden
-            className="size-24 rounded-full bg-primary/10 border-2 border-primary flex items-center justify-center text-3xl font-semibold text-primary"
+            className="size-24 rounded-2xl bg-gradient-to-br from-primary to-pink-400 flex items-center justify-center shadow-lg shadow-primary/20"
           >
-            {profile.name
-              .split(" ")
-              .map((p) => p[0])
-              .join("")}
+            <LogoMark size={64} className="rounded-none bg-transparent" />
           </div>
           <div className="space-y-2 flex-1 min-w-0">
             <div className="flex items-center gap-3 flex-wrap">

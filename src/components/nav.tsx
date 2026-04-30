@@ -4,6 +4,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { MobileMenu } from "@/components/mobile-menu";
 import { SignOutButton } from "@/components/sign-out-button";
+import { LogoMark, Wordmark } from "@/components/logo";
 
 export async function Nav() {
   const session = await auth();
@@ -21,8 +22,9 @@ export async function Nav() {
   return (
     <header className="border-b sticky top-0 z-40 bg-background/80 backdrop-blur">
       <nav className="container mx-auto max-w-5xl px-4 h-14 flex items-center justify-between gap-4">
-        <Link href="/" className="font-semibold tracking-tight">
-          <span className="text-primary">hage</span>book
+        <Link href="/" className="font-semibold tracking-tight flex items-center gap-2">
+          <LogoMark size={28} className="rounded-lg" />
+          <Wordmark />
         </Link>
 
         {/* Desktop cluster */}
@@ -55,6 +57,9 @@ export async function Nav() {
                   </Link>
                 </>
               ) : null}
+              <kbd className="hidden xl:inline-flex h-6 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] text-muted-foreground">
+                ⌘K
+              </kbd>
               <span className="hidden lg:inline text-sm text-muted-foreground">
                 {user.email}
               </span>

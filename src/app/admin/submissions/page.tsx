@@ -54,7 +54,7 @@ export default async function AdminSubmissionsPage() {
 
       {submissions.length === 0 ? (
         <EmptyState
-          icon="📝"
+          icon="inbox"
           title="No submissions yet"
           description="When students submit assignment links, they'll appear here for grading."
         />
