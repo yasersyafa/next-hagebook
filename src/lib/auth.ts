@@ -54,42 +54,44 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   callbacks: {
-    async jwt({ token, user, trigger }) {
+    async jwt({ token, user }) {
       const t = token as typeof token & {
         id?: string;
         role?: Role;
         status?: UserStatus;
         iat?: number;
+        // Cache last DB sync time (sec since epoch) to avoid querying every request.
+        lastSync?: number;
       };
+
       if (user) {
         t.id = (user as { id: string }).id;
         t.role = user.role;
         t.status = user.status;
-      } else if (trigger === "update" && t.id) {
-        const fresh = await prisma.user.findUnique({
-          where: { id: t.id },
-          select: { role: true, status: true },
-        });
-        if (fresh) {
-          t.role = fresh.role;
-          t.status = fresh.status;
-        }
+        t.lastSync = Math.floor(Date.now() / 1000);
+        return t;
       }
 
-      // Reject stale tokens issued before last password change.
-      if (t.id && t.iat) {
-        const u = await prisma.user.findUnique({
-          where: { id: t.id },
-          select: { passwordChangedAt: true },
-        });
-        if (u?.passwordChangedAt) {
-          const changedSec = Math.floor(u.passwordChangedAt.getTime() / 1000);
-          if (t.iat < changedSec) {
-            // Returning a token w/o id makes session invalid.
-            return {};
-          }
-        }
+      // Periodic refresh: re-fetch role/status/passwordChangedAt every 60s.
+      if (!t.id) return t;
+      const now = Math.floor(Date.now() / 1000);
+      if (t.lastSync && now - t.lastSync < 60) return t;
+
+      const fresh = await prisma.user.findUnique({
+        where: { id: t.id },
+        select: { role: true, status: true, passwordChangedAt: true },
+      });
+      if (!fresh) return {};
+
+      // Reject if password changed after token was issued.
+      if (fresh.passwordChangedAt && t.iat) {
+        const changedSec = Math.floor(fresh.passwordChangedAt.getTime() / 1000);
+        if (t.iat < changedSec) return {};
       }
+
+      t.role = fresh.role;
+      t.status = fresh.status;
+      t.lastSync = now;
       return t;
     },
     async session({ session, token }) {

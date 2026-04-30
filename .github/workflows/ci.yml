@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-test-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Cache Bun install
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun/install/cache
+            node_modules
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: bunx prisma generate
+        env:
+          DATABASE_URL: postgresql://placeholder:placeholder@placeholder/placeholder
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Typecheck + build
+        run: bun run build
+        env:
+          # Build doesn't need a real DB — just a parseable URL.
+          DATABASE_URL: postgresql://placeholder:placeholder@placeholder/placeholder
+          AUTH_SECRET: ci-secret-not-used-at-runtime
+          NEXTAUTH_URL: http://localhost:3000
+          BOOTSTRAP_ADMIN_EMAIL: admin@example.com
+
+      - name: Test
+        run: bun run test

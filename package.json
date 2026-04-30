@@ -12,7 +12,12 @@
     "postinstall": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "db:seed": "bun run scripts/seed-pages.ts",
+    "prepare": "husky"
+  },
+  "prisma": {
+    "seed": "bun run scripts/seed-pages.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",
@@ -68,6 +73,8 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
     "eslint-plugin-unused-imports": "^4.4.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.5"
