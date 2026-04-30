@@ -32,11 +32,12 @@ export async function decideUser(formData: FormData): Promise<ActionResult> {
     select: { email: true, name: true, status: true },
   });
 
-  // Email is best-effort — don't fail the action if it errors.
+  // Await so serverless function doesn't terminate before SMTP completes.
+  // Errors are logged inside send() and won't throw.
   if (action === "APPROVE") {
-    void sendApprovalEmail({ to: user.email, name: user.name });
+    await sendApprovalEmail({ to: user.email, name: user.name });
   } else {
-    void sendRejectionEmail({ to: user.email, name: user.name });
+    await sendRejectionEmail({ to: user.email, name: user.name });
   }
 
   revalidatePath("/admin/users");

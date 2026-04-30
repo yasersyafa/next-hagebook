@@ -36,7 +36,7 @@ export async function requestPasswordReset(formData: FormData): Promise<ActionRe
     },
   });
 
-  void sendResetEmail({ to: user.email, name: user.name, token: raw });
+  await sendResetEmail({ to: user.email, name: user.name, token: raw });
   return { ok: true };
 }
 

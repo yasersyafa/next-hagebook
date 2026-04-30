@@ -34,7 +34,7 @@ export async function gradeSubmission(formData: FormData): Promise<ActionResult>
     select: { title: true },
   });
 
-  void sendGradeEmail({
+  await sendGradeEmail({
     to: updated.user.email,
     name: updated.user.name,
     pageTitle: page?.title ?? updated.pageSlug,
