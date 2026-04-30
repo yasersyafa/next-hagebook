@@ -1,0 +1,78 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String       @id @default(cuid())
+  email        String       @unique
+  name         String?
+  passwordHash String
+  role         Role         @default(STUDENT)
+  status       UserStatus   @default(PENDING)
+  approvedAt   DateTime?
+  approvedById String?
+  submissions  Submission[]
+  pages        Page[]       @relation("PageAuthor")
+  createdAt    DateTime     @default(now())
+}
+
+enum Role {
+  STUDENT
+  ADMIN
+}
+
+enum UserStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Submission {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pageSlug  String
+  url       String
+  status    SubmissionStatus @default(PENDING)
+  feedback  String?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@unique([userId, pageSlug])
+  @@index([userId])
+  @@index([pageSlug])
+}
+
+enum SubmissionStatus {
+  PENDING
+  PASS
+  FAIL
+}
+
+model Page {
+  id               String     @id @default(cuid())
+  slug             String     @unique
+  title            String
+  description      String?
+  order            Int        @default(0)
+  status           PageStatus @default(DRAFT)
+  contentHtml      String
+  assignmentPrompt String?
+  authorId         String
+  author           User       @relation("PageAuthor", fields: [authorId], references: [id])
+  publishedAt      DateTime?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  @@index([status, order])
+}
+
+enum PageStatus {
+  DRAFT
+  PUBLISHED
+}
