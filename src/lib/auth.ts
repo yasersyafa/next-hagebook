@@ -1,13 +1,9 @@
-import NextAuth, { CredentialsSignin, type DefaultSession } from "next-auth";
+import NextAuth, { type DefaultSession } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import type { Role, UserStatus } from "@/generated/prisma/enums";
-
-class EmailUnverifiedError extends CredentialsSignin {
-  code = "email_unverified";
-}
 
 declare module "next-auth" {
   interface Session {
@@ -47,7 +43,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         if (!user) return null;
         const ok = await bcrypt.compare(password, user.passwordHash);
         if (!ok) return null;
-        if (!user.emailVerifiedAt) throw new EmailUnverifiedError();
         return {
           id: user.id,
           email: user.email,

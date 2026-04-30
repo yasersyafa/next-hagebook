@@ -5,17 +5,15 @@ import { LoginForm } from "@/components/login-form";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ verified?: string; registered?: string; reset?: string }>;
+  searchParams: Promise<{ registered?: string; reset?: string }>;
 }) {
   const sp = await searchParams;
   const banner =
-    sp.verified === "1"
-      ? "Email verified. Sign in to continue."
-      : sp.registered === "1"
-        ? "Check your inbox for a verification link, then sign in."
-        : sp.reset === "1"
-          ? "Password updated. Sign in with the new password."
-          : null;
+    sp.registered === "1"
+      ? "Account created. An admin will review your account — you'll get an email when approved."
+      : sp.reset === "1"
+        ? "Password updated. Sign in with the new password."
+        : null;
 
   return (
     <div className="min-h-svh flex items-center justify-center px-4 py-12">

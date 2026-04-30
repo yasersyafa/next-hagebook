@@ -2,12 +2,13 @@ import "server-only";
 import nodemailer, { type Transporter } from "nodemailer";
 
 const fromAddress = process.env.EMAIL_FROM ?? "hagebook <hello@hagegames.com>";
-const appUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+const appUrl = process.env.NEXTAUTH_URL ?? "https://next-hagebook.vercel.app";
 const brand = "#ff005a";
 
 const SMTP_HOST = process.env.SMTP_HOST;
 const SMTP_PORT = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 465;
-const SMTP_SECURE = (process.env.SMTP_SECURE ?? "true").toLowerCase() !== "false";
+const SMTP_SECURE =
+  (process.env.SMTP_SECURE ?? "true").toLowerCase() !== "false";
 const SMTP_USER = process.env.SMTP_USER;
 const SMTP_PASS = process.env.SMTP_PASS;
 
@@ -40,7 +41,13 @@ async function send({ to, subject, html, text }: SendArgs) {
     return { ok: true as const, skipped: true };
   }
   try {
-    const info = await tx.sendMail({ from: fromAddress, to, subject, html, text });
+    const info = await tx.sendMail({
+      from: fromAddress,
+      to,
+      subject,
+      html,
+      text,
+    });
     return { ok: true as const, id: info.messageId };
   } catch (err) {
     console.error("[email] send failed:", err);
@@ -51,7 +58,13 @@ async function send({ to, subject, html, text }: SendArgs) {
   }
 }
 
-function shell(title: string, intro: string, ctaLabel: string, ctaHref: string, body: string) {
+function shell(
+  title: string,
+  intro: string,
+  ctaLabel: string,
+  ctaHref: string,
+  body: string,
+) {
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -103,7 +116,10 @@ function shell(title: string, intro: string, ctaLabel: string, ctaHref: string, 
 </html>`;
 }
 
-export async function sendApprovalEmail(args: { to: string; name?: string | null }) {
+export async function sendApprovalEmail(args: {
+  to: string;
+  name?: string | null;
+}) {
   const greeting = args.name ? `Hi ${args.name},` : "Hi,";
   const subject = "Your hagebook account is approved";
   const intro = `${greeting} good news — an admin has approved your hagebook account.`;
@@ -116,28 +132,6 @@ export async function sendApprovalEmail(args: { to: string; name?: string | null
     "You can now sign in, read lessons, and submit assignments.",
     "",
     `Sign in: ${ctaHref}`,
-  ].join("\n");
-  return send({ to: args.to, subject, html, text });
-}
-
-export async function sendVerifyEmail(args: {
-  to: string;
-  name?: string | null;
-  token: string;
-}) {
-  const greeting = args.name ? `Hi ${args.name},` : "Hi,";
-  const subject = "Verify your hagebook email";
-  const intro = `${greeting} confirm this email address to finish creating your hagebook account.`;
-  const ctaHref = `${appUrl}/verify?token=${encodeURIComponent(args.token)}`;
-  const body = `<p style="margin:0 0 12px;font-size:14px;line-height:1.6;color:#3f3f46;">After verifying, an admin will review your account before granting access to lessons.</p>
-<p style="margin:0 0 12px;font-size:13px;line-height:1.6;color:#71717a;">This link expires in 24 hours. If you did not register, ignore this email.</p>`;
-  const html = shell(subject, intro, "Verify email", ctaHref, body);
-  const text = [
-    intro,
-    "",
-    `Verify: ${ctaHref}`,
-    "",
-    "Link expires in 24 hours.",
   ].join("\n");
   return send({ to: args.to, subject, html, text });
 }
@@ -217,7 +211,10 @@ function escapeHtml(s: string) {
     .replace(/'/g, "&#39;");
 }
 
-export async function sendRejectionEmail(args: { to: string; name?: string | null }) {
+export async function sendRejectionEmail(args: {
+  to: string;
+  name?: string | null;
+}) {
   const greeting = args.name ? `Hi ${args.name},` : "Hi,";
   const subject = "Update on your hagebook application";
   const intro = `${greeting} thanks for your interest in hagebook. After review, your application was not approved at this time.`;
