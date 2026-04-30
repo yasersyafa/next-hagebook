@@ -16,6 +16,7 @@ import {
   Monitor,
 } from "lucide-react";
 import {
+  Command,
   CommandDialog,
   CommandEmpty,
   CommandGroup,
@@ -68,6 +69,7 @@ export function CommandPalette({
 
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
+      <Command>
       <CommandInput placeholder="Search lessons, navigate, run actions..." />
       <CommandList>
         <CommandEmpty>No results.</CommandEmpty>
@@ -168,6 +170,7 @@ export function CommandPalette({
         <span>Tip: Cmd+K anywhere</span>
         <CommandShortcut>↵ to go</CommandShortcut>
       </div>
+      </Command>
     </CommandDialog>
   );
 }
