@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,13 @@ import { Label } from "@/components/ui/label";
 import { submitAssignment } from "@/actions/submit-assignment";
 
 const draftKey = (slug: string) => `hagebook-submit-draft-${slug}`;
+
+function readDraft(slug: string, initialUrl: string): string {
+  if (typeof window === "undefined") return initialUrl;
+  const saved = localStorage.getItem(draftKey(slug));
+  if (saved && saved.trim().length > 0 && saved !== initialUrl) return saved;
+  return initialUrl;
+}
 
 export function SubmitLinkForm({
   pageSlug,
@@ -19,22 +26,16 @@ export function SubmitLinkForm({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const [url, setUrl] = useState(initialUrl);
+
+  // Lazy init reads localStorage on first client render. Avoids setState-in-effect.
+  const [url, setUrl] = useState<string>(() => readDraft(pageSlug, initialUrl));
+  const [restoredFromDraft] = useState<boolean>(() => {
+    const v = readDraft(pageSlug, initialUrl);
+    return v !== initialUrl && v.length > 0;
+  });
   const [error, setError] = useState<string | null>(null);
-  const hydrated = useRef(false);
 
-  // Restore draft once on mount, only if it differs from initialUrl.
-  useEffect(() => {
-    if (hydrated.current) return;
-    hydrated.current = true;
-    if (typeof window === "undefined") return;
-    const saved = localStorage.getItem(draftKey(pageSlug));
-    if (saved && saved !== initialUrl && saved.trim().length > 0) {
-      setUrl(saved);
-    }
-  }, [pageSlug, initialUrl]);
-
-  // Debounced save to localStorage.
+  // Debounced save — pure side effect to external system, no setState here.
   useEffect(() => {
     if (typeof window === "undefined") return;
     const t = setTimeout(() => {
@@ -58,7 +59,6 @@ export function SubmitLinkForm({
         toast.error(result.error);
         return;
       }
-      // Clear draft on success.
       if (typeof window !== "undefined") {
         localStorage.removeItem(draftKey(pageSlug));
       }
@@ -66,12 +66,6 @@ export function SubmitLinkForm({
       router.refresh();
     });
   }
-
-  const draftRestored =
-    typeof window !== "undefined" &&
-    url !== initialUrl &&
-    localStorage.getItem(draftKey(pageSlug)) === url &&
-    url.length > 0;
 
   return (
     <form onSubmit={onSubmit} className="space-y-3">
@@ -82,12 +76,13 @@ export function SubmitLinkForm({
           id="url"
           name="url"
           type="url"
-          placeholder="https://github.com/you/repo"
+          placeholder="https://example.com"
           required
           value={url}
           onChange={(e) => setUrl(e.target.value)}
+          suppressHydrationWarning
         />
-        {draftRestored ? (
+        {restoredFromDraft ? (
           <p className="text-xs text-muted-foreground">
             Draft restored from your last session.
           </p>
@@ -95,7 +90,11 @@ export function SubmitLinkForm({
       </div>
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
       <Button type="submit" disabled={pending}>
-        {pending ? "Submitting..." : initialUrl ? "Update submission" : "Submit"}
+        {pending
+          ? "Submitting..."
+          : initialUrl
+            ? "Update submission"
+            : "Submit"}
       </Button>
     </form>
   );
