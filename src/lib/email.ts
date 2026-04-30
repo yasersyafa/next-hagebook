@@ -120,6 +120,28 @@ export async function sendApprovalEmail(args: { to: string; name?: string | null
   return send({ to: args.to, subject, html, text });
 }
 
+export async function sendVerifyEmail(args: {
+  to: string;
+  name?: string | null;
+  token: string;
+}) {
+  const greeting = args.name ? `Hi ${args.name},` : "Hi,";
+  const subject = "Verify your hagebook email";
+  const intro = `${greeting} confirm this email address to finish creating your hagebook account.`;
+  const ctaHref = `${appUrl}/verify?token=${encodeURIComponent(args.token)}`;
+  const body = `<p style="margin:0 0 12px;font-size:14px;line-height:1.6;color:#3f3f46;">After verifying, an admin will review your account before granting access to lessons.</p>
+<p style="margin:0 0 12px;font-size:13px;line-height:1.6;color:#71717a;">This link expires in 24 hours. If you did not register, ignore this email.</p>`;
+  const html = shell(subject, intro, "Verify email", ctaHref, body);
+  const text = [
+    intro,
+    "",
+    `Verify: ${ctaHref}`,
+    "",
+    "Link expires in 24 hours.",
+  ].join("\n");
+  return send({ to: args.to, subject, html, text });
+}
+
 export async function sendRejectionEmail(args: { to: string; name?: string | null }) {
   const greeting = args.name ? `Hi ${args.name},` : "Hi,";
   const subject = "Update on your hagebook application";
