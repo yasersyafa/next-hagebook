@@ -43,12 +43,7 @@ export function ProfileLanding({ signedIn }: { signedIn: boolean }) {
       />
       <section className="space-y-6">
         <div className="flex items-start gap-6 flex-wrap">
-          <div
-            aria-hidden
-            className="size-24 rounded-2xl bg-linear-to-br from-primary to-pink-400 flex items-center justify-center shadow-lg shadow-primary/20"
-          >
-            <LogoMark size={64} className="rounded-none bg-transparent" />
-          </div>
+          <LogoMark size={96} className="rounded-none bg-transparent" />
           <div className="space-y-2 flex-1 min-w-0">
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-3xl font-semibold tracking-tight">
