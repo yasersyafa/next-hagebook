@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import type { PageMeta } from "@/lib/pages";
+import type { CategoryMeta, PageMeta } from "@/lib/pages";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 type View = "carousel" | "grid" | "table";
@@ -19,11 +20,41 @@ const tabs: { id: View; label: string; icon: string }[] = [
 export function LessonsHub({
   pages,
   userName,
+  categories,
 }: {
   pages: PageMeta[];
   userName: string;
+  categories: CategoryMeta[];
 }) {
   const [view, setView] = useState<View>("carousel");
+  const [search, setSearch] = useState("");
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [activeTags, setActiveTags] = useState<string[]>([]);
+
+  const filtered = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    return pages.filter((p) => {
+      if (activeCategory && p.category?.slug !== activeCategory) return false;
+      if (activeTags.length > 0) {
+        const slugs = new Set(p.tags.map((t) => t.slug));
+        if (!activeTags.every((t) => slugs.has(t))) return false;
+      }
+      if (term) {
+        const hay = `${p.title} ${p.description ?? ""}`.toLowerCase();
+        if (!hay.includes(term)) return false;
+      }
+      return true;
+    });
+  }, [pages, search, activeCategory, activeTags]);
+
+  function toggleTag(slug: string) {
+    setActiveTags((prev) =>
+      prev.includes(slug) ? prev.filter((t) => t !== slug) : [...prev, slug],
+    );
+  }
+
+  const showFilters = categories.length > 0 || pages.some((p) => p.tags.length > 0);
+  const hasActiveFilter = activeCategory !== null || activeTags.length > 0 || search.length > 0;
 
   return (
     <div className="container mx-auto max-w-6xl px-4 py-12 space-y-10">
@@ -76,23 +107,120 @@ export function LessonsHub({
           </div>
         </div>
 
-        {pages.length === 0 ? (
+        {showFilters ? (
+          <div className="space-y-3">
+            <Input
+              type="search"
+              placeholder="Search lessons..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="max-w-sm"
+            />
+            {categories.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                <FilterPill
+                  active={activeCategory === null}
+                  onClick={() => setActiveCategory(null)}
+                >
+                  All
+                </FilterPill>
+                {categories.map((c) => (
+                  <FilterPill
+                    key={c.id}
+                    active={activeCategory === c.slug}
+                    onClick={() =>
+                      setActiveCategory(activeCategory === c.slug ? null : c.slug)
+                    }
+                  >
+                    {c.name}
+                  </FilterPill>
+                ))}
+              </div>
+            ) : null}
+            {activeTags.length > 0 ? (
+              <div className="flex flex-wrap gap-2 items-center">
+                <span className="text-xs text-muted-foreground">Tags:</span>
+                {activeTags.map((t) => (
+                  <Badge
+                    key={t}
+                    variant="default"
+                    className="cursor-pointer gap-1"
+                    onClick={() => toggleTag(t)}
+                  >
+                    {t}
+                    <span className="ml-0.5">×</span>
+                  </Badge>
+                ))}
+              </div>
+            ) : null}
+            {hasActiveFilter ? (
+              <p className="text-xs text-muted-foreground">
+                {filtered.length} of {pages.length} match{filtered.length === 1 ? "" : "es"}.{" "}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearch("");
+                    setActiveCategory(null);
+                    setActiveTags([]);
+                  }}
+                  className="text-primary underline-offset-4 hover:underline"
+                >
+                  Clear filters
+                </button>
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+
+        {filtered.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            No lessons yet. Drop an MDX file in <code className="font-mono">/content</code>.
+            {pages.length === 0
+              ? "No lessons yet."
+              : "No lessons match the current filters."}
           </p>
         ) : view === "carousel" ? (
-          <CarouselView pages={pages} />
+          <CarouselView pages={filtered} onTagClick={toggleTag} />
         ) : view === "grid" ? (
-          <GridView pages={pages} />
+          <GridView pages={filtered} onTagClick={toggleTag} />
         ) : (
-          <TableView pages={pages} />
+          <TableView pages={filtered} />
         )}
       </section>
     </div>
   );
 }
 
-function LessonCard({ page }: { page: PageMeta }) {
+function FilterPill({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-full px-3 py-1 text-sm border transition-colors ${
+        active
+          ? "bg-primary text-primary-foreground border-primary"
+          : "bg-background text-muted-foreground hover:text-foreground border-border"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function LessonCard({
+  page,
+  onTagClick,
+}: {
+  page: PageMeta;
+  onTagClick?: (slug: string) => void;
+}) {
   return (
     <Card className="h-full hover:border-primary/50 transition-colors">
       <CardHeader>
@@ -100,12 +228,36 @@ function LessonCard({ page }: { page: PageMeta }) {
           <span className="text-xs font-mono text-muted-foreground">
             {String(page.order).padStart(2, "0")}
           </span>
-          {page.assignmentPrompt ? <Badge variant="secondary">Assignment</Badge> : null}
+          <div className="flex gap-1.5">
+            {page.category ? (
+              <Badge variant="outline" className="text-xs">
+                {page.category.name}
+              </Badge>
+            ) : null}
+            {page.assignmentPrompt ? <Badge variant="secondary">Assignment</Badge> : null}
+          </div>
         </div>
         <CardTitle className="text-lg">{page.title}</CardTitle>
         {page.description ? <CardDescription>{page.description}</CardDescription> : null}
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-3">
+        {page.tags.length > 0 ? (
+          <div className="flex flex-wrap gap-1">
+            {page.tags.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  onTagClick?.(t.slug);
+                }}
+                className="text-xs text-muted-foreground hover:text-primary"
+              >
+                #{t.slug}
+              </button>
+            ))}
+          </div>
+        ) : null}
         <Link
           href={`/pages/${page.slug}`}
           className={buttonVariants({ size: "sm", variant: "outline" })}
@@ -117,7 +269,13 @@ function LessonCard({ page }: { page: PageMeta }) {
   );
 }
 
-function CarouselView({ pages }: { pages: PageMeta[] }) {
+function CarouselView({
+  pages,
+  onTagClick,
+}: {
+  pages: PageMeta[];
+  onTagClick: (slug: string) => void;
+}) {
   return (
     <div className="-mx-4 px-4 overflow-x-auto">
       <div
@@ -126,7 +284,7 @@ function CarouselView({ pages }: { pages: PageMeta[] }) {
       >
         {pages.map((p) => (
           <div key={p.slug} className="snap-start shrink-0 w-72 sm:w-80">
-            <LessonCard page={p} />
+            <LessonCard page={p} onTagClick={onTagClick} />
           </div>
         ))}
       </div>
@@ -134,11 +292,17 @@ function CarouselView({ pages }: { pages: PageMeta[] }) {
   );
 }
 
-function GridView({ pages }: { pages: PageMeta[] }) {
+function GridView({
+  pages,
+  onTagClick,
+}: {
+  pages: PageMeta[];
+  onTagClick: (slug: string) => void;
+}) {
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {pages.map((p) => (
-        <LessonCard key={p.slug} page={p} />
+        <LessonCard key={p.slug} page={p} onTagClick={onTagClick} />
       ))}
     </div>
   );
@@ -152,6 +316,7 @@ function TableView({ pages }: { pages: PageMeta[] }) {
           <TableRow>
             <TableHead className="w-16">#</TableHead>
             <TableHead>Title</TableHead>
+            <TableHead>Category</TableHead>
             <TableHead>Description</TableHead>
             <TableHead className="w-32">Assignment</TableHead>
             <TableHead className="w-24 text-right">Action</TableHead>
@@ -164,6 +329,9 @@ function TableView({ pages }: { pages: PageMeta[] }) {
                 {String(p.order).padStart(2, "0")}
               </TableCell>
               <TableCell className="font-medium">{p.title}</TableCell>
+              <TableCell className="text-muted-foreground">
+                {p.category?.name ?? "—"}
+              </TableCell>
               <TableCell className="text-muted-foreground">{p.description ?? "—"}</TableCell>
               <TableCell>
                 {p.assignmentPrompt ? <Badge variant="secondary">Yes</Badge> : <span className="text-muted-foreground">—</span>}

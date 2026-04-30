@@ -1,6 +1,8 @@
+import { listCategories } from "@/lib/pages";
 import { PageForm } from "@/components/page-form";
 
-export default function NewPagePage() {
+export default async function NewPagePage() {
+  const categories = await listCategories();
   return (
     <div className="container mx-auto max-w-6xl px-4 py-10">
       <div className="mb-6">
@@ -9,6 +11,7 @@ export default function NewPagePage() {
       </div>
       <PageForm
         mode="create"
+        categories={categories}
         initial={{
           slug: "",
           title: "",
@@ -17,6 +20,8 @@ export default function NewPagePage() {
           contentHtml: "",
           assignmentPrompt: "",
           status: "DRAFT",
+          categoryId: null,
+          tagSlugs: [],
         }}
       />
     </div>

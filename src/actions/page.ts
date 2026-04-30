@@ -20,6 +20,14 @@ async function requireAdmin() {
 }
 
 function payloadFromForm(fd: FormData) {
+  const tagSlugsRaw = fd.get("tagSlugs");
+  const tagSlugs =
+    typeof tagSlugsRaw === "string" && tagSlugsRaw.length > 0
+      ? tagSlugsRaw
+          .split(",")
+          .map((s) => slugify(s.trim()))
+          .filter(Boolean)
+      : [];
   return {
     slug: fd.get("slug"),
     title: fd.get("title"),
@@ -28,7 +36,36 @@ function payloadFromForm(fd: FormData) {
     contentHtml: fd.get("contentHtml"),
     assignmentPrompt: fd.get("assignmentPrompt") || null,
     status: fd.get("status") || "DRAFT",
+    categoryId: fd.get("categoryId") || null,
+    tagSlugs,
   };
+}
+
+function slugify(input: string): string {
+  return input
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+async function syncTags(tagSlugs: string[]): Promise<string[]> {
+  if (tagSlugs.length === 0) return [];
+  const unique = Array.from(new Set(tagSlugs));
+  await Promise.all(
+    unique.map((slug) =>
+      prisma.tag.upsert({
+        where: { slug },
+        create: { slug, name: slug.replace(/-/g, " ") },
+        update: {},
+      }),
+    ),
+  );
+  const tags = await prisma.tag.findMany({
+    where: { slug: { in: unique } },
+    select: { id: true },
+  });
+  return tags.map((t) => t.id);
 }
 
 export async function createPage(
@@ -47,6 +84,7 @@ export async function createPage(
   if (existingSlug) return { ok: false, error: "Slug already in use" };
 
   const cleanHtml = sanitizeHtml(data.contentHtml);
+  const tagIds = await syncTags(data.tagSlugs);
   const created = await prisma.page.create({
     data: {
       slug: data.slug,
@@ -58,6 +96,8 @@ export async function createPage(
       status: data.status,
       authorId: admin.id,
       publishedAt: data.status === "PUBLISHED" ? new Date() : null,
+      categoryId: data.categoryId,
+      tags: tagIds.length ? { connect: tagIds.map((id) => ({ id })) } : undefined,
     },
     select: { id: true, slug: true },
   });
@@ -97,6 +137,7 @@ export async function updatePage(formData: FormData): Promise<ActionResult> {
   const cleanHtml = sanitizeHtml(data.contentHtml);
   const becomingPublished =
     existing.status === "DRAFT" && data.status === "PUBLISHED";
+  const tagIds = await syncTags(data.tagSlugs);
 
   await prisma.page.update({
     where: { id: data.id },
@@ -109,6 +150,8 @@ export async function updatePage(formData: FormData): Promise<ActionResult> {
       assignmentPrompt: data.assignmentPrompt,
       status: data.status,
       publishedAt: becomingPublished ? new Date() : existing.publishedAt,
+      categoryId: data.categoryId,
+      tags: { set: tagIds.map((id) => ({ id })) },
     },
   });
 
@@ -168,6 +211,28 @@ export async function deletePage(formData: FormData): Promise<ActionResult> {
   revalidatePath("/dashboard");
   revalidatePath(`/pages/${existing.slug}`);
   return { ok: true };
+}
+
+export async function createCategory(formData: FormData): Promise<ActionResult<{ id: string; slug: string; name: string }>> {
+  const admin = await requireAdmin();
+  if (!admin) return { ok: false, error: "Forbidden" };
+
+  const rawName = String(formData.get("name") ?? "").trim();
+  if (!rawName) return { ok: false, error: "Name required" };
+  if (rawName.length > 80) return { ok: false, error: "Name too long" };
+
+  const slug = slugify(rawName);
+  if (!slug) return { ok: false, error: "Invalid name" };
+
+  const existing = await prisma.category.findUnique({ where: { slug } });
+  if (existing) return { ok: true, data: existing };
+
+  const created = await prisma.category.create({
+    data: { slug, name: rawName },
+    select: { id: true, slug: true, name: true },
+  });
+  revalidatePath("/admin/pages");
+  return { ok: true, data: created };
 }
 
 export async function createPageAndRedirect(formData: FormData) {

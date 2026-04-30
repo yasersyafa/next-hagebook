@@ -59,17 +59,18 @@ enum UserStatus {
 }
 
 model Submission {
-  id        String           @id @default(cuid())
-  userId    String
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  pageSlug  String
-  url       String
-  status    SubmissionStatus @default(PENDING)
-  feedback  String?
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
+  id            String           @id @default(cuid())
+  userId        String
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pageSlug      String
+  url           String
+  status        SubmissionStatus @default(PENDING)
+  feedback      String?
+  attemptNumber Int              @default(1)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
 
-  @@unique([userId, pageSlug])
+  @@index([userId, pageSlug, attemptNumber])
   @@index([userId])
   @@index([pageSlug])
 }
@@ -91,11 +92,31 @@ model Page {
   assignmentPrompt String?
   authorId         String
   author           User       @relation("PageAuthor", fields: [authorId], references: [id])
+  categoryId       String?
+  category         Category?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  tags             Tag[]      @relation("PageTags")
   publishedAt      DateTime?
   createdAt        DateTime   @default(now())
   updatedAt        DateTime   @updatedAt
 
   @@index([status, order])
+  @@index([categoryId])
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  name      String
+  pages     Page[]
+  createdAt DateTime @default(now())
+}
+
+model Tag {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  name      String
+  pages     Page[]   @relation("PageTags")
+  createdAt DateTime @default(now())
 }
 
 enum PageStatus {

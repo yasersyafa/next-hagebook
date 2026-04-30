@@ -16,7 +16,10 @@ import {
   updatePage,
   setPageStatus,
   deletePage,
+  createCategory,
 } from "@/actions/page";
+
+export type CategoryOption = { id: string; slug: string; name: string };
 
 export type PageFormInitial = {
   id?: string;
@@ -28,14 +31,18 @@ export type PageFormInitial = {
   assignmentPrompt: string;
   status: "DRAFT" | "PUBLISHED";
   publishedAt?: Date | null;
+  categoryId: string | null;
+  tagSlugs: string[];
 };
 
 export function PageForm({
   initial,
   mode,
+  categories: initialCategories,
 }: {
   initial: PageFormInitial;
   mode: "create" | "edit";
+  categories: CategoryOption[];
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -49,7 +56,62 @@ export function PageForm({
   const [contentHtml, setContentHtml] = useState(initial.contentHtml);
   const [assignmentPrompt, setAssignmentPrompt] = useState(initial.assignmentPrompt);
   const [status, setStatus] = useState<"DRAFT" | "PUBLISHED">(initial.status);
+  const [categoryId, setCategoryId] = useState<string>(initial.categoryId ?? "");
+  const [categories, setCategories] = useState<CategoryOption[]>(initialCategories);
+  const [tags, setTags] = useState<string[]>(initial.tagSlugs);
+  const [tagInput, setTagInput] = useState("");
   const [error, setError] = useState<string | null>(null);
+
+  function addTag(raw: string) {
+    const slug = raw
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+    if (!slug) return;
+    if (tags.includes(slug)) return;
+    if (tags.length >= 10) {
+      toast.error("Max 10 tags");
+      return;
+    }
+    setTags([...tags, slug]);
+  }
+
+  function removeTag(slug: string) {
+    setTags(tags.filter((t) => t !== slug));
+  }
+
+  function handleTagKey(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      if (tagInput.trim()) {
+        addTag(tagInput);
+        setTagInput("");
+      }
+    } else if (e.key === "Backspace" && !tagInput && tags.length > 0) {
+      removeTag(tags[tags.length - 1]);
+    }
+  }
+
+  async function onAddCategory() {
+    const name = window.prompt("New category name (e.g., Web Dev):");
+    if (!name) return;
+    const fd = new FormData();
+    fd.set("name", name);
+    const result = await createCategory(fd);
+    if (!result.ok) {
+      toast.error(result.error);
+      return;
+    }
+    if (result.data) {
+      setCategories((prev) => {
+        if (prev.some((c) => c.id === result.data!.id)) return prev;
+        return [...prev, result.data!].sort((a, b) => a.name.localeCompare(b.name));
+      });
+      setCategoryId(result.data.id);
+      toast.success("Category added");
+    }
+  }
 
   const isPublished = mode === "edit" && initial.status === "PUBLISHED";
   const slugLocked = mode === "edit" && Boolean(initial.publishedAt);
@@ -64,6 +126,8 @@ export function PageForm({
     fd.set("contentHtml", contentHtml);
     fd.set("assignmentPrompt", assignmentPrompt);
     fd.set("status", submitStatus);
+    fd.set("categoryId", categoryId || "");
+    fd.set("tagSlugs", tags.join(","));
     return fd;
   }
 
@@ -247,6 +311,66 @@ export function PageForm({
                 value={order}
                 onChange={(e) => setOrder(Number(e.target.value))}
               />
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="categoryId">Category</Label>
+                <button
+                  type="button"
+                  onClick={onAddCategory}
+                  className="text-xs text-primary underline-offset-4 hover:underline"
+                >
+                  + New
+                </button>
+              </div>
+              <select
+                id="categoryId"
+                value={categoryId}
+                onChange={(e) => setCategoryId(e.target.value)}
+                className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <option value="">— None —</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="tagInput">Tags</Label>
+              <div className="flex flex-wrap gap-1.5 rounded-md border bg-background p-2 min-h-9">
+                {tags.map((t) => (
+                  <Badge key={t} variant="secondary" className="gap-1">
+                    {t}
+                    <button
+                      type="button"
+                      onClick={() => removeTag(t)}
+                      aria-label={`Remove ${t}`}
+                      className="ml-0.5 text-muted-foreground hover:text-foreground"
+                    >
+                      ×
+                    </button>
+                  </Badge>
+                ))}
+                <input
+                  id="tagInput"
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={handleTagKey}
+                  onBlur={() => {
+                    if (tagInput.trim()) {
+                      addTag(tagInput);
+                      setTagInput("");
+                    }
+                  }}
+                  placeholder={tags.length === 0 ? "Type and press enter..." : ""}
+                  className="flex-1 min-w-24 bg-transparent text-sm outline-none"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Enter or comma to add. Backspace empties last tag. Max 10.
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="assignmentPrompt">Assignment prompt (optional)</Label>

@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getPageById } from "@/lib/pages";
+import { getPageById, listCategories } from "@/lib/pages";
 import { PageForm } from "@/components/page-form";
 
 export default async function EditPagePage({
@@ -8,7 +8,7 @@ export default async function EditPagePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const page = await getPageById(id);
+  const [page, categories] = await Promise.all([getPageById(id), listCategories()]);
   if (!page) notFound();
 
   return (
@@ -19,6 +19,7 @@ export default async function EditPagePage({
       </div>
       <PageForm
         mode="edit"
+        categories={categories}
         initial={{
           id: page.id,
           slug: page.slug,
@@ -29,6 +30,8 @@ export default async function EditPagePage({
           assignmentPrompt: page.assignmentPrompt ?? "",
           status: page.status,
           publishedAt: page.publishedAt,
+          categoryId: page.category?.id ?? null,
+          tagSlugs: page.tags.map((t) => t.slug),
         }}
       />
     </div>

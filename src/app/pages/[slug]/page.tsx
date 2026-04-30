@@ -19,14 +19,18 @@ export default async function PagePage({ params }: { params: Promise<{ slug: str
   const session = await auth();
   const userId = session?.user?.id;
 
-  const [allPages, existing] = await Promise.all([
+  const [allPages, attempts] = await Promise.all([
     listPublishedPages(),
     userId
-      ? prisma.submission.findUnique({
-          where: { userId_pageSlug: { userId, pageSlug: page.slug } },
+      ? prisma.submission.findMany({
+          where: { userId, pageSlug: page.slug },
+          orderBy: { attemptNumber: "desc" },
         })
-      : Promise.resolve(null),
+      : Promise.resolve([]),
   ]);
+
+  const latest = attempts[0] ?? null;
+  const previous = attempts.slice(1);
 
   const idx = allPages.findIndex((p) => p.slug === page.slug);
   const prev = idx > 0 ? allPages[idx - 1] : null;
@@ -61,8 +65,8 @@ export default async function PagePage({ params }: { params: Promise<{ slug: str
             <CardDescription>{page.assignmentPrompt}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {existing ? <SubmissionStatusCard submission={existing} /> : null}
-            <SubmitLinkForm pageSlug={page.slug} initialUrl={existing?.url ?? ""} />
+            {latest ? <SubmissionStatusCard submission={latest} previous={previous} /> : null}
+            <SubmitLinkForm pageSlug={page.slug} initialUrl="" />
           </CardContent>
         </Card>
       ) : null}

@@ -31,23 +31,32 @@ export async function submitAssignment(formData: FormData): Promise<ActionResult
     return { ok: false, error: "No assignment for this page" };
   }
 
-  await prisma.submission.upsert({
-    where: { userId_pageSlug: { userId: session.user.id, pageSlug } },
-    create: {
+  const last = await prisma.submission.findFirst({
+    where: { userId: session.user.id, pageSlug },
+    orderBy: { attemptNumber: "desc" },
+    select: { attemptNumber: true, url: true },
+  });
+
+  // Block redundant submit if URL identical to latest attempt that's still pending
+  if (last && last.url === url) {
+    return { ok: false, error: "Same URL as your last submission" };
+  }
+
+  const nextAttempt = (last?.attemptNumber ?? 0) + 1;
+
+  await prisma.submission.create({
+    data: {
       userId: session.user.id,
       pageSlug,
       url,
       status: "PENDING",
       feedback: null,
-    },
-    update: {
-      url,
-      status: "PENDING",
-      feedback: null,
+      attemptNumber: nextAttempt,
     },
   });
 
   revalidatePath(`/pages/${pageSlug}`);
   revalidatePath("/dashboard");
+  revalidatePath("/admin/submissions");
   return { ok: true };
 }

@@ -22,11 +22,24 @@ export default async function DashboardPage() {
     listPublishedPages(),
     prisma.submission.findMany({
       where: { userId: session.user.id },
-      orderBy: { updatedAt: "desc" },
+      orderBy: [{ pageSlug: "asc" }, { attemptNumber: "desc" }],
     }),
   ]);
 
-  const bySlug = new Map(submissions.map((s) => [s.pageSlug, s]));
+  // Group by slug — latest first per slug
+  const grouped = new Map<
+    string,
+    { latest: (typeof submissions)[number]; attempts: number }
+  >();
+  for (const s of submissions) {
+    const existing = grouped.get(s.pageSlug);
+    if (!existing) {
+      grouped.set(s.pageSlug, { latest: s, attempts: 1 });
+    } else {
+      existing.attempts += 1;
+    }
+  }
+
   const assignments = pages.filter((p) => p.assignmentPrompt);
 
   return (
@@ -50,12 +63,13 @@ export default async function DashboardPage() {
                 <TableRow>
                   <TableHead>Lesson</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Attempts</TableHead>
                   <TableHead>Last submitted</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {assignments.map((p) => {
-                  const sub = bySlug.get(p.slug);
+                  const entry = grouped.get(p.slug);
                   return (
                     <TableRow key={p.slug}>
                       <TableCell>
@@ -64,14 +78,19 @@ export default async function DashboardPage() {
                         </Link>
                       </TableCell>
                       <TableCell>
-                        {sub ? (
-                          <Badge variant={variant[sub.status]}>{sub.status}</Badge>
+                        {entry ? (
+                          <Badge variant={variant[entry.latest.status]}>
+                            {entry.latest.status}
+                          </Badge>
                         ) : (
                           <Badge variant="outline">NOT SUBMITTED</Badge>
                         )}
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {sub ? sub.updatedAt.toLocaleString() : "—"}
+                        {entry ? entry.attempts : 0}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {entry ? entry.latest.updatedAt.toLocaleString() : "—"}
                       </TableCell>
                     </TableRow>
                   );

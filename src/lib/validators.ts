@@ -33,6 +33,8 @@ export const approveUserSchema = z.object({
 
 const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
+export const tagSlugRegex = slugRegex;
+
 export const pageBaseSchema = z.object({
   slug: z
     .string()
@@ -50,6 +52,16 @@ export const pageBaseSchema = z.object({
     .nullable()
     .transform((v) => (v && v.trim().length > 0 ? v : null)),
   status: z.enum(["DRAFT", "PUBLISHED"]).default("DRAFT"),
+  categoryId: z
+    .string()
+    .max(50)
+    .optional()
+    .nullable()
+    .transform((v) => (v && v.length > 0 ? v : null)),
+  tagSlugs: z
+    .array(z.string().min(1).max(40).regex(slugRegex))
+    .max(10)
+    .default([]),
 });
 
 export const pageCreateSchema = pageBaseSchema;

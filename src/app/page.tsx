@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { listPublishedPages } from "@/lib/pages";
+import { listPublishedCategories, listPublishedPages } from "@/lib/pages";
 import { ProfileLanding } from "@/components/profile-landing";
 import { LessonsHub } from "@/components/lessons-hub";
 
@@ -15,8 +15,17 @@ export default async function HomePage() {
   }
 
   if (user?.status === "APPROVED") {
-    const pages = await listPublishedPages();
-    return <LessonsHub pages={pages} userName={user.name ?? user.email ?? "there"} />;
+    const [pages, categories] = await Promise.all([
+      listPublishedPages(),
+      listPublishedCategories(),
+    ]);
+    return (
+      <LessonsHub
+        pages={pages}
+        categories={categories}
+        userName={user.name ?? user.email ?? "there"}
+      />
+    );
   }
 
   return <ProfileLanding signedIn={Boolean(user)} />;
