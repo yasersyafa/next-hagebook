@@ -1,12 +1,28 @@
 import "server-only";
-import { Resend } from "resend";
+import nodemailer, { type Transporter } from "nodemailer";
 
-const apiKey = process.env.RESEND_API_KEY;
-const fromAddress = process.env.EMAIL_FROM ?? "hagebook <onboarding@resend.dev>";
+const fromAddress = process.env.EMAIL_FROM ?? "hagebook <hello@hagegames.com>";
 const appUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
 const brand = "#ff005a";
 
-const resend = apiKey ? new Resend(apiKey) : null;
+const SMTP_HOST = process.env.SMTP_HOST;
+const SMTP_PORT = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 465;
+const SMTP_SECURE = (process.env.SMTP_SECURE ?? "true").toLowerCase() !== "false";
+const SMTP_USER = process.env.SMTP_USER;
+const SMTP_PASS = process.env.SMTP_PASS;
+
+let transporter: Transporter | null = null;
+function getTransport(): Transporter | null {
+  if (transporter) return transporter;
+  if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) return null;
+  transporter = nodemailer.createTransport({
+    host: SMTP_HOST,
+    port: SMTP_PORT,
+    secure: SMTP_SECURE,
+    auth: { user: SMTP_USER, pass: SMTP_PASS },
+  });
+  return transporter;
+}
 
 type SendArgs = {
   to: string;
@@ -16,28 +32,22 @@ type SendArgs = {
 };
 
 async function send({ to, subject, html, text }: SendArgs) {
-  if (!resend) {
+  const tx = getTransport();
+  if (!tx) {
     console.warn(
-      `[email] RESEND_API_KEY missing. Would send to ${to}: ${subject}\n--- text ---\n${text}`,
+      `[email] SMTP not configured. Would send to ${to}: ${subject}\n--- text ---\n${text}`,
     );
     return { ok: true as const, skipped: true };
   }
   try {
-    const result = await resend.emails.send({
-      from: fromAddress,
-      to,
-      subject,
-      html,
-      text,
-    });
-    if (result.error) {
-      console.error("[email] send failed:", result.error);
-      return { ok: false as const, error: result.error.message };
-    }
-    return { ok: true as const, id: result.data?.id };
+    const info = await tx.sendMail({ from: fromAddress, to, subject, html, text });
+    return { ok: true as const, id: info.messageId };
   } catch (err) {
-    console.error("[email] threw:", err);
-    return { ok: false as const, error: "Email send failed" };
+    console.error("[email] send failed:", err);
+    return {
+      ok: false as const,
+      error: err instanceof Error ? err.message : "Email send failed",
+    };
   }
 }
 
