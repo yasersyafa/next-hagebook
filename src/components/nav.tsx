@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { auth } from "@/lib/auth";
-import { logoutAction } from "@/actions/auth";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { MobileMenu } from "@/components/mobile-menu";
+import { SignOutButton } from "@/components/sign-out-button";
 
 export async function Nav() {
   const session = await auth();
@@ -50,11 +50,7 @@ export async function Nav() {
               <span className="hidden lg:inline text-sm text-muted-foreground">
                 {user.email}
               </span>
-              <form action={logoutAction}>
-                <Button type="submit" variant="outline" size="sm">
-                  Sign out
-                </Button>
-              </form>
+              <SignOutButton />
             </>
           ) : (
             <>

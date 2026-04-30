@@ -28,7 +28,12 @@ export const gradeSubmissionSchema = z.object({
 
 export const approveUserSchema = z.object({
   userId: z.string().min(1),
-  action: z.enum(["APPROVE", "REJECT"]),
+  action: z.enum(["APPROVE", "REJECT", "DEACTIVATE", "REACTIVATE"]),
+});
+
+export const deleteUserSchema = z.object({
+  userId: z.string().min(1),
+  confirmEmail: z.string().email(),
 });
 
 const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;

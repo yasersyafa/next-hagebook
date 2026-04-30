@@ -10,13 +10,13 @@ import {
   SheetHeader,
 } from "@/components/ui/sheet";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { logoutAction } from "@/actions/auth";
+import { SignOutButton } from "@/components/sign-out-button";
 
 type MenuUser = {
   email: string;
   name?: string | null;
   role: "STUDENT" | "ADMIN";
-  status: "PENDING" | "APPROVED" | "REJECTED";
+  status: "PENDING" | "APPROVED" | "REJECTED" | "DEACTIVATED";
 } | null;
 
 export function MobileMenu({ user }: { user: MenuUser }) {
@@ -70,11 +70,9 @@ export function MobileMenu({ user }: { user: MenuUser }) {
                   </Link>
                 </>
               ) : null}
-              <form action={logoutAction} className="mt-2">
-                <Button type="submit" variant="outline" size="sm" className="w-full">
-                  Sign out
-                </Button>
-              </form>
+              <div className="mt-2">
+                <SignOutButton variant="outline" className="w-full" />
+              </div>
             </>
           ) : (
             <>

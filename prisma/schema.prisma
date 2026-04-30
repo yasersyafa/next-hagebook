@@ -43,6 +43,7 @@ enum UserStatus {
   PENDING
   APPROVED
   REJECTED
+  DEACTIVATED
 }
 
 model Submission {

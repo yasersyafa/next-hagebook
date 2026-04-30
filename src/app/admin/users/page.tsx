@@ -5,10 +5,20 @@ import { Badge } from "@/components/ui/badge";
 import { UserDecisionButtons } from "@/components/user-decision-buttons";
 import type { UserStatus } from "@/generated/prisma/enums";
 
-const variant: Record<UserStatus, "secondary" | "default" | "destructive"> = {
+const variant: Record<UserStatus, "secondary" | "default" | "destructive" | "outline"> = {
   PENDING: "secondary",
   APPROVED: "default",
   REJECTED: "destructive",
+  DEACTIVATED: "outline",
+};
+
+type Row = {
+  id: string;
+  name: string | null;
+  email: string;
+  role: "STUDENT" | "ADMIN";
+  status: UserStatus;
+  createdAt: Date;
 };
 
 export default async function AdminUsersPage() {
@@ -17,17 +27,24 @@ export default async function AdminUsersPage() {
   });
 
   const pending = users.filter((u) => u.status === "PENDING");
-  const others = users.filter((u) => u.status !== "PENDING");
+  const approved = users.filter((u) => u.status === "APPROVED");
+  const rejected = users.filter((u) => u.status === "REJECTED");
+  const deactivated = users.filter((u) => u.status === "DEACTIVATED");
 
   return (
     <div className="container mx-auto max-w-5xl px-4 py-10 space-y-6">
       <div>
-        <h1 className="text-3xl font-semibold tracking-tight">User approvals</h1>
-        <p className="text-muted-foreground">{pending.length} pending</p>
+        <h1 className="text-3xl font-semibold tracking-tight">Users</h1>
+        <p className="text-muted-foreground">
+          {pending.length} pending · {approved.length} approved ·{" "}
+          {rejected.length} rejected · {deactivated.length} deactivated
+        </p>
       </div>
 
-      <Section title="Pending" description="Awaiting your decision" rows={pending} showActions />
-      <Section title="Approved & Rejected" description="Past decisions" rows={others} />
+      <Section title="Pending" description="Awaiting your decision" rows={pending} />
+      <Section title="Approved" description="Active users with lesson access" rows={approved} />
+      <Section title="Deactivated" description="Access blocked, data retained" rows={deactivated} />
+      <Section title="Rejected" description="Never approved" rows={rejected} />
     </div>
   );
 }
@@ -36,19 +53,10 @@ function Section({
   title,
   description,
   rows,
-  showActions = false,
 }: {
   title: string;
   description: string;
-  rows: {
-    id: string;
-    name: string | null;
-    email: string;
-    role: "STUDENT" | "ADMIN";
-    status: UserStatus;
-    createdAt: Date;
-  }[];
-  showActions?: boolean;
+  rows: Row[];
 }) {
   return (
     <Card>
@@ -68,14 +76,14 @@ function Section({
                 <TableHead>Role</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Joined</TableHead>
-                {showActions ? <TableHead className="text-right">Actions</TableHead> : null}
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {rows.map((u) => (
                 <TableRow key={u.id}>
                   <TableCell>{u.name ?? "—"}</TableCell>
-                  <TableCell>{u.email}</TableCell>
+                  <TableCell className="font-mono text-xs">{u.email}</TableCell>
                   <TableCell>{u.role}</TableCell>
                   <TableCell>
                     <Badge variant={variant[u.status]}>{u.status}</Badge>
@@ -83,11 +91,17 @@ function Section({
                   <TableCell className="text-muted-foreground">
                     {u.createdAt.toLocaleDateString()}
                   </TableCell>
-                  {showActions ? (
-                    <TableCell className="text-right">
-                      <UserDecisionButtons userId={u.id} />
-                    </TableCell>
-                  ) : null}
+                  <TableCell className="text-right">
+                    {u.role === "ADMIN" ? (
+                      <span className="text-xs text-muted-foreground">Protected</span>
+                    ) : (
+                      <UserDecisionButtons
+                        userId={u.id}
+                        email={u.email}
+                        status={u.status}
+                      />
+                    )}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

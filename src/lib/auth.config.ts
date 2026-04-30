@@ -9,7 +9,7 @@ export const authConfig = {
       if (user) {
         token.id = (user as { id: string }).id;
         token.role = (user as { role: "STUDENT" | "ADMIN" }).role;
-        token.status = (user as { status: "PENDING" | "APPROVED" | "REJECTED" }).status;
+        token.status = (user as { status: "PENDING" | "APPROVED" | "REJECTED" | "DEACTIVATED" }).status;
       }
       return token;
     },
@@ -17,7 +17,7 @@ export const authConfig = {
       if (token.id) {
         session.user.id = token.id as string;
         session.user.role = token.role as "STUDENT" | "ADMIN";
-        session.user.status = token.status as "PENDING" | "APPROVED" | "REJECTED";
+        session.user.status = token.status as "PENDING" | "APPROVED" | "REJECTED" | "DEACTIVATED";
       }
       return session;
     },
