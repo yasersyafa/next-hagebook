@@ -7,6 +7,7 @@ import { LogOut, UserCircle, LayoutDashboard, ShieldCheck } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -59,19 +60,21 @@ export function UserMenu({
           {initials}
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="min-w-56">
-          <DropdownMenuLabel>
-            <div className="flex flex-col gap-0.5">
-              <span className="text-sm font-medium truncate">
-                {name ?? "Signed in"}
-              </span>
-              <span className="text-xs text-muted-foreground font-normal truncate">
-                {email}
-              </span>
-              <span className="mt-1 inline-flex w-fit items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
-                {isAdmin ? "Admin" : status}
-              </span>
-            </div>
-          </DropdownMenuLabel>
+          <DropdownMenuGroup>
+            <DropdownMenuLabel>
+              <div className="flex flex-col gap-0.5">
+                <span className="text-sm font-medium truncate">
+                  {name ?? "Signed in"}
+                </span>
+                <span className="text-xs text-muted-foreground font-normal truncate">
+                  {email}
+                </span>
+                <span className="mt-1 inline-flex w-fit items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+                  {isAdmin ? "Admin" : status}
+                </span>
+              </div>
+            </DropdownMenuLabel>
+          </DropdownMenuGroup>
           <DropdownMenuSeparator />
           {approved ? (
             <DropdownMenuItem render={<Link href="/dashboard" />}>
