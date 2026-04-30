@@ -3,8 +3,11 @@ import type { Metadata } from "next";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoginForm } from "@/components/login-form";
 
+const SITE_URL = process.env.NEXTAUTH_URL ?? "https://next-hagebook.vercel.app";
+
 export const metadata: Metadata = {
   title: "Sign in",
+  alternates: { canonical: `${SITE_URL}/login` },
   robots: { index: false, follow: false },
 };
 

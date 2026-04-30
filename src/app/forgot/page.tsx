@@ -15,7 +15,7 @@ export default function ForgotPage() {
         <CardHeader>
           <CardTitle>Forgot password</CardTitle>
           <CardDescription>
-            Enter your email — if an account exists, we'll send a reset link.
+            Enter your email — if an account exists, we&apos;ll send a reset link.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

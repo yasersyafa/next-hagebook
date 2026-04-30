@@ -13,6 +13,13 @@ type ThemeContextValue = {
 const STORAGE_KEY = "hagebook-theme";
 const ThemeContext = React.createContext<ThemeContextValue | null>(null);
 
+function readStoredTheme(defaultTheme: Theme): Theme {
+  if (typeof window === "undefined") return defaultTheme;
+  const stored = window.localStorage.getItem(STORAGE_KEY) as Theme | null;
+  if (stored === "light" || stored === "dark" || stored === "system") return stored;
+  return defaultTheme;
+}
+
 function getSystemTheme(): "light" | "dark" {
   if (typeof window === "undefined") return "light";
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
@@ -26,6 +33,14 @@ function applyTheme(theme: Theme) {
   root.style.colorScheme = resolved;
 }
 
+// Subscribe to system color-scheme changes for useSyncExternalStore.
+function subscribeSystemTheme(onChange: () => void): () => void {
+  if (typeof window === "undefined") return () => {};
+  const mq = window.matchMedia("(prefers-color-scheme: dark)");
+  mq.addEventListener("change", onChange);
+  return () => mq.removeEventListener("change", onChange);
+}
+
 export function ThemeProvider({
   children,
   defaultTheme = "system",
@@ -33,30 +48,31 @@ export function ThemeProvider({
   children: React.ReactNode;
   defaultTheme?: Theme;
 }) {
-  const [theme, setThemeState] = React.useState<Theme>(defaultTheme);
-  const [resolvedTheme, setResolvedTheme] = React.useState<"light" | "dark">("light");
+  // Lazy init reads localStorage once on first client render. No setState in effect.
+  const [theme, setThemeState] = React.useState<Theme>(() =>
+    readStoredTheme(defaultTheme),
+  );
 
-  React.useEffect(() => {
-    const stored = (localStorage.getItem(STORAGE_KEY) as Theme | null) ?? defaultTheme;
-    setThemeState(stored);
-  }, [defaultTheme]);
+  // Track system preference via useSyncExternalStore (designed for external state).
+  const systemDark = React.useSyncExternalStore(
+    subscribeSystemTheme,
+    () => getSystemTheme(),
+    () => "light" as const,
+  );
 
+  // Derive resolvedTheme during render — no effect, no setState.
+  const resolvedTheme: "light" | "dark" =
+    theme === "system" ? systemDark : theme;
+
+  // Side effect to external system (DOM) — allowed in effect.
   React.useEffect(() => {
     applyTheme(theme);
-    setResolvedTheme(theme === "system" ? getSystemTheme() : theme);
-
-    if (theme !== "system") return;
-    const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    const onChange = () => {
-      applyTheme("system");
-      setResolvedTheme(getSystemTheme());
-    };
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
-  }, [theme]);
+  }, [theme, systemDark]);
 
   const setTheme = React.useCallback((next: Theme) => {
-    localStorage.setItem(STORAGE_KEY, next);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(STORAGE_KEY, next);
+    }
     setThemeState(next);
   }, []);
 

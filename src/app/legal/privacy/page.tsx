@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 
+const SITE_URL = process.env.NEXTAUTH_URL ?? "https://next-hagebook.vercel.app";
+
 export const metadata: Metadata = {
-  title: "Privacy Policy · Hagebook",
-  description: "Privacy policy for hagebook.",
+  title: "Privacy Policy",
+  description: "How hagebook handles your data — operated by HAGE Games.",
+  alternates: { canonical: `${SITE_URL}/legal/privacy` },
 };
 
 export default function PrivacyPage() {

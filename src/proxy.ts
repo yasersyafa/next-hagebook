@@ -10,9 +10,9 @@ export default auth((req) => {
   const path = nextUrl.pathname;
 
   const isAdminRoute = path.startsWith("/admin");
-  const isAppRoute =
-    path.startsWith("/pages") ||
-    path.startsWith("/dashboard");
+  // /pages/* is now publicly crawlable (teaser for unauth users).
+  // Keep /dashboard gated.
+  const isAppRoute = path.startsWith("/dashboard");
 
   if (isAdminRoute) {
     if (!session?.user) {

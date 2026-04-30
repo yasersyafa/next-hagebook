@@ -106,6 +106,31 @@ export async function listTags(): Promise<TagMeta[]> {
   });
 }
 
+export async function listRelatedPages(
+  slug: string,
+  tagSlugs: string[],
+  categorySlug: string | null,
+  limit = 3,
+): Promise<PageMeta[]> {
+  if (tagSlugs.length === 0 && !categorySlug) return [];
+  const rows = await prisma.page.findMany({
+    where: {
+      status: "PUBLISHED",
+      slug: { not: slug },
+      OR: [
+        tagSlugs.length > 0
+          ? { tags: { some: { slug: { in: tagSlugs } } } }
+          : undefined,
+        categorySlug ? { category: { slug: categorySlug } } : undefined,
+      ].filter(Boolean) as Array<Record<string, unknown>>,
+    },
+    orderBy: [{ publishedAt: "desc" }],
+    take: limit,
+    select: metaSelect,
+  });
+  return rows;
+}
+
 export async function listPublishedCategories(): Promise<CategoryMeta[]> {
   const rows = await prisma.category.findMany({
     where: { pages: { some: { status: "PUBLISHED" } } },

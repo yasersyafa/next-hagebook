@@ -3,6 +3,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { LogoMark } from "@/components/logo";
+import type { PageMeta } from "@/lib/pages";
 
 const profile = {
   name: "HAGE",
@@ -34,7 +35,13 @@ const jsonLd = {
   email: "contact@hagegames.com",
 };
 
-export function ProfileLanding({ signedIn }: { signedIn: boolean }) {
+export function ProfileLanding({
+  signedIn,
+  lessons = [],
+}: {
+  signedIn: boolean;
+  lessons?: PageMeta[];
+}) {
   return (
     <div className="container mx-auto max-w-3xl px-4 py-16 space-y-12">
       <script
@@ -117,6 +124,48 @@ export function ProfileLanding({ signedIn }: { signedIn: boolean }) {
           ))}
         </div>
       </section>
+
+      {lessons.length > 0 ? (
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm uppercase tracking-wider text-muted-foreground">
+              Recent lessons
+            </h2>
+            <span className="text-xs text-muted-foreground">{lessons.length} published</span>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {lessons.map((l) => (
+              <Link
+                key={l.slug}
+                href={`/pages/${l.slug}`}
+                className="block rounded-lg border bg-background p-4 hover:border-primary/50 transition-colors"
+              >
+                <div className="flex items-center gap-2 flex-wrap mb-1">
+                  {l.category ? (
+                    <Badge variant="outline" className="text-[10px]">
+                      {l.category.name}
+                    </Badge>
+                  ) : null}
+                  {l.assignmentPrompt ? (
+                    <Badge variant="secondary" className="text-[10px]">
+                      Assignment
+                    </Badge>
+                  ) : null}
+                </div>
+                <p className="font-medium">{l.title}</p>
+                {l.description ? (
+                  <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
+                    {l.description}
+                  </p>
+                ) : null}
+                <p className="mt-2 text-xs text-primary font-medium">
+                  Read teaser →
+                </p>
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <section className="space-y-3">
         <h2 className="text-sm uppercase tracking-wider text-muted-foreground">

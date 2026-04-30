@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 
+const SITE_URL = process.env.NEXTAUTH_URL ?? "https://next-hagebook.vercel.app";
+
 export const metadata: Metadata = {
-  title: "Terms of Service · Hagebook",
-  description: "Terms of service for hagebook.",
+  title: "Terms of Service",
+  description: "Terms of service for hagebook by HAGE Games.",
+  alternates: { canonical: `${SITE_URL}/legal/terms` },
 };
 
 export default function TermsPage() {
@@ -17,13 +20,13 @@ export default function TermsPage() {
       </p>
       <h2>Use of the service</h2>
       <p>
-        You may use hagebook to read lessons and submit assignments. Don't
+        You may use hagebook to read lessons and submit assignments. Don&apos;t
         misuse the service: no scraping, no abusing other users, no uploading
         content that violates law or third-party rights.
       </p>
       <h2>Accounts</h2>
       <p>
-        You're responsible for keeping your password safe. We reserve the right
+        You&apos;re responsible for keeping your password safe. We reserve the right
         to deactivate or delete accounts that violate these terms.
       </p>
       <h2>Content ownership</h2>
@@ -34,7 +37,7 @@ export default function TermsPage() {
       </p>
       <h2>Liability</h2>
       <p>
-        The service is provided as-is, without warranty. We're not liable for
+        The service is provided as-is, without warranty. We&apos;re not liable for
         damages arising from your use of hagebook.
       </p>
       <h2>Contact</h2>

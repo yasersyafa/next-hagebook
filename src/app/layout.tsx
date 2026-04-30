@@ -72,6 +72,23 @@ export default async function RootLayout({
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              name: "hagebook",
+              alternateName: "hagebook · a HAGE Games handbook",
+              url: SITE_URL,
+              publisher: {
+                "@type": "Organization",
+                name: "HAGE Games",
+                url: "https://hagegames.com",
+              },
+            }),
+          }}
+        />
       </head>
       <body className="min-h-full flex flex-col">
         <ThemeProvider defaultTheme="system">
