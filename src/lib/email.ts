@@ -2,6 +2,7 @@ import "server-only";
 import nodemailer, { type Transporter } from "nodemailer";
 
 const fromAddress = process.env.EMAIL_FROM ?? "hagebook <hello@hagegames.com>";
+const replyTo = process.env.EMAIL_REPLY_TO ?? "contact@hagegames.com";
 const appUrl = process.env.NEXTAUTH_URL ?? "https://next-hagebook.vercel.app";
 const brand = "#ff005a";
 
@@ -43,6 +44,7 @@ async function send({ to, subject, html, text }: SendArgs) {
   try {
     const info = await tx.sendMail({
       from: fromAddress,
+      replyTo,
       to,
       subject,
       html,

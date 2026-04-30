@@ -3,6 +3,25 @@
 import { useRef, useState } from "react";
 import type { Editor } from "@tiptap/react";
 import { toast } from "sonner";
+import {
+  Bold,
+  Italic,
+  Strikethrough,
+  Code,
+  Heading1,
+  Heading2,
+  Heading3,
+  List,
+  ListOrdered,
+  Quote,
+  Code2,
+  Link2,
+  Image as ImageIcon,
+  Minus,
+  Undo2,
+  Redo2,
+  Loader2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 function ToolbarButton({
@@ -22,11 +41,12 @@ function ToolbarButton({
     <Button
       type="button"
       variant="ghost"
-      size="sm"
+      size="icon-sm"
       onClick={onClick}
       disabled={disabled}
       aria-pressed={active}
       aria-label={label}
+      title={label}
       className={active ? "bg-primary/10 text-primary" : ""}
     >
       {children}
@@ -91,7 +111,7 @@ export function PageEditorToolbar({ editor }: { editor: Editor | null }) {
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-1 border-b bg-muted/40 p-1">
+    <div className="flex flex-wrap items-center gap-1 border-b bg-muted/40 p-1" role="toolbar" aria-label="Lesson editor toolbar">
       <input
         ref={fileInputRef}
         type="file"
@@ -104,28 +124,28 @@ export function PageEditorToolbar({ editor }: { editor: Editor | null }) {
         active={editor.isActive("bold")}
         onClick={() => editor.chain().focus().toggleBold().run()}
       >
-        <strong>B</strong>
+        <Bold />
       </ToolbarButton>
       <ToolbarButton
         label="Italic"
         active={editor.isActive("italic")}
         onClick={() => editor.chain().focus().toggleItalic().run()}
       >
-        <em>I</em>
+        <Italic />
       </ToolbarButton>
       <ToolbarButton
-        label="Strike"
+        label="Strikethrough"
         active={editor.isActive("strike")}
         onClick={() => editor.chain().focus().toggleStrike().run()}
       >
-        <s>S</s>
+        <Strikethrough />
       </ToolbarButton>
       <ToolbarButton
         label="Inline code"
         active={editor.isActive("code")}
         onClick={() => editor.chain().focus().toggleCode().run()}
       >
-        <code>{`<>`}</code>
+        <Code />
       </ToolbarButton>
       <span className="mx-1 h-5 w-px bg-border" />
       <ToolbarButton
@@ -133,21 +153,21 @@ export function PageEditorToolbar({ editor }: { editor: Editor | null }) {
         active={editor.isActive("heading", { level: 1 })}
         onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
       >
-        H1
+        <Heading1 />
       </ToolbarButton>
       <ToolbarButton
         label="Heading 2"
         active={editor.isActive("heading", { level: 2 })}
         onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
       >
-        H2
+        <Heading2 />
       </ToolbarButton>
       <ToolbarButton
         label="Heading 3"
         active={editor.isActive("heading", { level: 3 })}
         onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
       >
-        H3
+        <Heading3 />
       </ToolbarButton>
       <span className="mx-1 h-5 w-px bg-border" />
       <ToolbarButton
@@ -155,48 +175,48 @@ export function PageEditorToolbar({ editor }: { editor: Editor | null }) {
         active={editor.isActive("bulletList")}
         onClick={() => editor.chain().focus().toggleBulletList().run()}
       >
-        •
+        <List />
       </ToolbarButton>
       <ToolbarButton
         label="Ordered list"
         active={editor.isActive("orderedList")}
         onClick={() => editor.chain().focus().toggleOrderedList().run()}
       >
-        1.
+        <ListOrdered />
       </ToolbarButton>
       <ToolbarButton
         label="Blockquote"
         active={editor.isActive("blockquote")}
         onClick={() => editor.chain().focus().toggleBlockquote().run()}
       >
-        ❝
+        <Quote />
       </ToolbarButton>
       <ToolbarButton
         label="Code block"
         active={editor.isActive("codeBlock")}
         onClick={() => editor.chain().focus().toggleCodeBlock().run()}
       >
-        {"{ }"}
+        <Code2 />
       </ToolbarButton>
       <ToolbarButton
-        label="Link"
+        label="Insert link"
         active={editor.isActive("link")}
         onClick={toggleLink}
       >
-        🔗
+        <Link2 />
       </ToolbarButton>
       <ToolbarButton
-        label={uploading ? "Uploading image..." : "Image"}
+        label={uploading ? "Uploading image" : "Insert image"}
         onClick={onPickImage}
         disabled={uploading}
       >
-        {uploading ? "…" : "🖼"}
+        {uploading ? <Loader2 className="animate-spin" /> : <ImageIcon />}
       </ToolbarButton>
       <ToolbarButton
         label="Horizontal rule"
         onClick={() => editor.chain().focus().setHorizontalRule().run()}
       >
-        ―
+        <Minus />
       </ToolbarButton>
       <span className="mx-1 h-5 w-px bg-border" />
       <ToolbarButton
@@ -204,14 +224,14 @@ export function PageEditorToolbar({ editor }: { editor: Editor | null }) {
         disabled={!editor.can().undo()}
         onClick={() => editor.chain().focus().undo().run()}
       >
-        ↶
+        <Undo2 />
       </ToolbarButton>
       <ToolbarButton
         label="Redo"
         disabled={!editor.can().redo()}
         onClick={() => editor.chain().focus().redo().run()}
       >
-        ↷
+        <Redo2 />
       </ToolbarButton>
     </div>
   );

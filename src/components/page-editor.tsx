@@ -36,6 +36,9 @@ export function PageEditor({
       attributes: {
         class:
           "prose prose-neutral dark:prose-invert max-w-none focus:outline-none px-4 py-3 min-h-[320px]",
+        role: "textbox",
+        "aria-label": "Lesson body",
+        "aria-multiline": "true",
       },
     },
   });

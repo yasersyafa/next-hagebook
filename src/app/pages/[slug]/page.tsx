@@ -66,7 +66,7 @@ export default async function PagePage({ params }: { params: Promise<{ slug: str
           </CardHeader>
           <CardContent className="space-y-4">
             {latest ? <SubmissionStatusCard submission={latest} previous={previous} /> : null}
-            <SubmitLinkForm pageSlug={page.slug} initialUrl="" />
+            <SubmitLinkForm pageSlug={page.slug} initialUrl={latest?.url ?? ""} />
           </CardContent>
         </Card>
       ) : null}

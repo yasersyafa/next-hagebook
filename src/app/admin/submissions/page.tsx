@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { GradeForm } from "@/components/grade-form";
+import { EmptyState } from "@/components/empty-state";
 import type { SubmissionStatus } from "@/generated/prisma/enums";
 
 const variant: Record<SubmissionStatus, "secondary" | "default" | "destructive"> = {
@@ -41,11 +42,11 @@ export default async function AdminSubmissionsPage() {
       </div>
 
       {submissions.length === 0 ? (
-        <Card>
-          <CardContent className="py-10 text-center text-muted-foreground">
-            No submissions yet.
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon="📝"
+          title="No submissions yet"
+          description="When students submit assignment links, they'll appear here for grading."
+        />
       ) : (
         <div className="space-y-4">
           {submissions.map((s) => {

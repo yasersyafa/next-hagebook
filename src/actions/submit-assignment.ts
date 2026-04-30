@@ -34,12 +34,12 @@ export async function submitAssignment(formData: FormData): Promise<ActionResult
   const last = await prisma.submission.findFirst({
     where: { userId: session.user.id, pageSlug },
     orderBy: { attemptNumber: "desc" },
-    select: { attemptNumber: true, url: true },
+    select: { attemptNumber: true, url: true, status: true },
   });
 
-  // Block redundant submit if URL identical to latest attempt that's still pending
-  if (last && last.url === url) {
-    return { ok: false, error: "Same URL as your last submission" };
+  // Allow re-submit with same URL only if previous attempt failed (re-grading request).
+  if (last && last.url === url && last.status === "PENDING") {
+    return { ok: false, error: "This URL is already pending review" };
   }
 
   const nextAttempt = (last?.attemptNumber ?? 0) + 1;
