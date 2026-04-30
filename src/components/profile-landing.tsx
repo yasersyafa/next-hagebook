@@ -45,16 +45,20 @@ export function ProfileLanding({ signedIn }: { signedIn: boolean }) {
         <div className="flex items-start gap-6 flex-wrap">
           <div
             aria-hidden
-            className="size-24 rounded-2xl bg-gradient-to-br from-primary to-pink-400 flex items-center justify-center shadow-lg shadow-primary/20"
+            className="size-24 rounded-2xl bg-linear-to-br from-primary to-pink-400 flex items-center justify-center shadow-lg shadow-primary/20"
           >
             <LogoMark size={64} className="rounded-none bg-transparent" />
           </div>
           <div className="space-y-2 flex-1 min-w-0">
             <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-3xl font-semibold tracking-tight">{profile.name}</h1>
+              <h1 className="text-3xl font-semibold tracking-tight">
+                {profile.name}
+              </h1>
               <Badge variant="secondary">{profile.handle}</Badge>
             </div>
-            <p className="text-muted-foreground">{profile.role} • {profile.location}</p>
+            <p className="text-muted-foreground">
+              {profile.role} • {profile.location}
+            </p>
           </div>
         </div>
         <p className="text-lg leading-relaxed">{profile.bio}</p>
@@ -64,12 +68,18 @@ export function ProfileLanding({ signedIn }: { signedIn: boolean }) {
               <Link href="/register" className={buttonVariants()}>
                 Request access
               </Link>
-              <Link href="/login" className={buttonVariants({ variant: "outline" })}>
+              <Link
+                href="/login"
+                className={buttonVariants({ variant: "outline" })}
+              >
                 Sign in
               </Link>
             </>
           ) : (
-            <Link href="/pending" className={buttonVariants({ variant: "outline" })}>
+            <Link
+              href="/pending"
+              className={buttonVariants({ variant: "outline" })}
+            >
               Check status
             </Link>
           )}
@@ -77,7 +87,9 @@ export function ProfileLanding({ signedIn }: { signedIn: boolean }) {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-sm uppercase tracking-wider text-muted-foreground">About</h2>
+        <h2 className="text-sm uppercase tracking-wider text-muted-foreground">
+          About
+        </h2>
         <Card>
           <CardContent className="pt-6">
             <ul className="space-y-2 text-sm">
@@ -93,7 +105,9 @@ export function ProfileLanding({ signedIn }: { signedIn: boolean }) {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-sm uppercase tracking-wider text-muted-foreground">Links</h2>
+        <h2 className="text-sm uppercase tracking-wider text-muted-foreground">
+          Links
+        </h2>
         <div className="flex gap-2 flex-wrap">
           {profile.links.map((l) => (
             <a
@@ -110,12 +124,26 @@ export function ProfileLanding({ signedIn }: { signedIn: boolean }) {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-sm uppercase tracking-wider text-muted-foreground">How hagebook works</h2>
+        <h2 className="text-sm uppercase tracking-wider text-muted-foreground">
+          How hagebook works
+        </h2>
         <div className="grid gap-3 sm:grid-cols-3">
           {[
-            { n: "01", t: "Register", d: "Request access. The HAGE team approves your account." },
-            { n: "02", t: "Learn", d: "Work through short lessons on shipping games and web apps." },
-            { n: "03", t: "Submit", d: "Paste a link to your game or repo. Get graded feedback." },
+            {
+              n: "01",
+              t: "Register",
+              d: "Request access. The HAGE team approves your account.",
+            },
+            {
+              n: "02",
+              t: "Learn",
+              d: "Work through short lessons on shipping games and web apps.",
+            },
+            {
+              n: "03",
+              t: "Submit",
+              d: "Paste a link to your game or repo. Get graded feedback.",
+            },
           ].map((s) => (
             <Card key={s.n}>
               <CardContent className="pt-6 space-y-2">
