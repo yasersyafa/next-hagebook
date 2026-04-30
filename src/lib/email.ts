@@ -165,6 +165,58 @@ export async function sendResetEmail(args: {
   return send({ to: args.to, subject, html, text });
 }
 
+export async function sendGradeEmail(args: {
+  to: string;
+  name?: string | null;
+  pageTitle: string;
+  pageSlug: string;
+  status: "PASS" | "FAIL";
+  feedback?: string | null;
+}) {
+  const greeting = args.name ? `Hi ${args.name},` : "Hi,";
+  const passed = args.status === "PASS";
+  const subject = passed
+    ? `Your submission passed: ${args.pageTitle}`
+    : `Your submission needs another look: ${args.pageTitle}`;
+  const intro = passed
+    ? `${greeting} an admin reviewed your submission for "${args.pageTitle}" and marked it PASS.`
+    : `${greeting} an admin reviewed your submission for "${args.pageTitle}" and marked it FAIL. Read the feedback, then re-submit when ready.`;
+  const ctaHref = `${appUrl}/pages/${encodeURIComponent(args.pageSlug)}`;
+  const badgeBg = passed ? "#16a34a" : "#dc2626";
+  const badgeLabel = passed ? "PASS" : "FAIL";
+  const feedbackBlock = args.feedback?.trim()
+    ? `<div style="margin:16px 0;padding:14px 16px;border-left:3px solid ${brand};background:#fafafa;border-radius:4px;">
+      <p style="margin:0 0 4px;font-size:12px;font-weight:600;color:#71717a;text-transform:uppercase;letter-spacing:0.04em;">Feedback</p>
+      <p style="margin:0;font-size:14px;line-height:1.6;color:#3f3f46;white-space:pre-wrap;">${escapeHtml(args.feedback)}</p>
+    </div>`
+    : "";
+  const body = `<div style="margin:0 0 12px;">
+  <span style="display:inline-block;padding:4px 10px;border-radius:999px;background:${badgeBg};color:#ffffff;font-size:12px;font-weight:600;letter-spacing:0.04em;">${badgeLabel}</span>
+</div>
+${feedbackBlock}`;
+  const html = shell(subject, intro, "View lesson", ctaHref, body);
+  const text = [
+    intro,
+    "",
+    `Status: ${badgeLabel}`,
+    args.feedback?.trim() ? `\nFeedback:\n${args.feedback}` : "",
+    "",
+    `Lesson: ${ctaHref}`,
+  ]
+    .filter(Boolean)
+    .join("\n");
+  return send({ to: args.to, subject, html, text });
+}
+
+function escapeHtml(s: string) {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 export async function sendRejectionEmail(args: { to: string; name?: string | null }) {
   const greeting = args.name ? `Hi ${args.name},` : "Hi,";
   const subject = "Update on your hagebook application";
