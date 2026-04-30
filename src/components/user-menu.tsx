@@ -33,12 +33,13 @@ export function UserMenu({
   const [signOutOpen, setSignOutOpen] = useState(false);
   const [pending, startTransition] = useTransition();
 
-  const initials = (name ?? email)
-    .split(/[\s@.]/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((p) => p[0]?.toUpperCase() ?? "")
-    .join("") || "?";
+  const initials =
+    (name ?? email)
+      .split(/[\s@.]/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((p) => p[0]?.toUpperCase() ?? "")
+      .join("") || "?";
 
   const isAdmin = role === "ADMIN";
   const approved = status === "APPROVED" && !isAdmin;
@@ -51,7 +52,7 @@ export function UserMenu({
             <button
               type="button"
               aria-label="Account menu"
-              className="flex size-8 items-center justify-center rounded-full bg-gradient-to-br from-primary to-pink-400 text-xs font-semibold text-primary-foreground shadow-sm ring-2 ring-transparent hover:ring-primary/30 transition-all focus-visible:outline-none focus-visible:ring-primary/50"
+              className="flex size-8 items-center justify-center rounded-full bg-linear-to-br from-primary to-pink-400 text-xs font-semibold text-primary-foreground shadow-sm ring-2 ring-transparent hover:ring-primary/30 transition-all focus-visible:outline-none focus-visible:ring-primary/50"
             />
           }
         >
@@ -60,7 +61,9 @@ export function UserMenu({
         <DropdownMenuContent align="end" className="min-w-56">
           <DropdownMenuLabel>
             <div className="flex flex-col gap-0.5">
-              <span className="text-sm font-medium truncate">{name ?? "Signed in"}</span>
+              <span className="text-sm font-medium truncate">
+                {name ?? "Signed in"}
+              </span>
               <span className="text-xs text-muted-foreground font-normal truncate">
                 {email}
               </span>
