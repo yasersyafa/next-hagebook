@@ -34,7 +34,8 @@ export function AccountActions({
               toast.error(result.error);
               return;
             }
-            const json = (result.data as { json?: string } | undefined)?.json ?? "{}";
+            const json =
+              (result.data as { json?: string } | undefined)?.json ?? "{}";
             const blob = new Blob([json], { type: "application/json" });
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
@@ -84,7 +85,7 @@ export function AccountActions({
             </p>
             <div className="space-y-1">
               <Label htmlFor="confirm-self">
-                Type your email <span className="font-mono">{email}</span> to confirm
+                Type <span className="font-mono">{email}</span> to confirm
               </Label>
               <Input
                 id="confirm-self"
