@@ -47,8 +47,15 @@ export function CommandPalette({
         setOpen((o) => !o);
       }
     }
+    function onOpenEvent() {
+      setOpen(true);
+    }
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("hagebook:open-palette", onOpenEvent);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("hagebook:open-palette", onOpenEvent);
+    };
   }, []);
 
   function go(href: string) {
